@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="it">
+<title>Risuona</title>
+<meta name="theme-color" content="#12131c">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* layout: una colonna, deck in alto (spettro + trasporto), scaletta sotto */
+:root{
+  --bg:#e9eeec;--surface:#f8faf9;--ink:#14201e;--muted:#5a6966;--line:#cfd8d5;
+  --accent:#0b7a6b;--accent-ink:#ffffff;--well:#dfe6e3;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1716;--surface:#172220;--ink:#e6efec;--muted:#8fa19d;--line:#2a3936;
+  --accent:#47cdb5;--accent-ink:#06211c;--well:#101a18;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1716;--surface:#172220;--ink:#e6efec;--muted:#8fa19d;--line:#2a3936;
+  --accent:#47cdb5;--accent-ink:#06211c;--well:#101a18;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--body);margin:0;padding-inline:16px;padding-block:24px 40px}
+.wrap{max-width:720px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font:700 22px/1 var(--display);margin:0;letter-spacing:-.01em}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.add{background:var(--accent);color:var(--accent-ink);font-weight:500;padding:9px 16px;border-radius:999px}
+.deck{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px}
+canvas{width:100%;height:120px;display:block;background:var(--well);border-radius:8px}
+.now{min-width:0}
+.now b{display:block;font:700 clamp(20px,5vw,28px)/1.15 var(--display);text-wrap:balance;overflow-wrap:anywhere}
+.now span{color:var(--muted);font-size:13px}
+.seek{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.t{font:500 13px var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);min-width:42px}
+.t:last-child{text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);min-width:0}
+.ctl{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.grp{display:flex;align-items:center;gap:6px}
+.ib{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
+.ib:hover{background:var(--well)}
+.ib svg{width:20px;height:20px;fill:currentColor}
+.ib[aria-pressed="true"]{color:var(--accent);background:var(--well)}
+.ib.play{width:56px;height:56px;background:var(--accent);color:var(--accent-ink)}
+.ib.play svg{width:24px;height:24px}
+.ib[disabled]{opacity:.4;cursor:default}
+.vol{display:flex;align-items:center;gap:8px;width:150px;color:var(--muted)}
+.vol svg{width:18px;height:18px;fill:currentColor;flex:none}
+.rep1{position:relative}
+.rep1[data-m="one"]::after{content:"1";position:absolute;font:500 10px var(--mono);right:7px;top:6px}
+h2{font:500 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;justify-content:space-between}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+li{display:grid;grid-template-columns:28px 1fr auto 32px;gap:10px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:6px}
+li:hover{background:var(--surface)}
+li .n{font:400 13px var(--mono);color:var(--muted);text-align:right}
+li .nm{min-width:0;overflow-wrap:anywhere}
+li .d{font:400 13px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+li.on .nm{color:var(--accent);font-weight:500}
+li.on .n{color:var(--accent)}
+li .x{width:28px;height:28px;border-radius:50%;color:var(--muted);font-size:18px;line-height:1}
+li .x:hover{background:var(--well);color:var(--ink)}
+.empty{border:1.5px dashed var(--line);border-radius:14px;padding:32px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font:700 18px var(--display);margin-bottom:4px}
+body.drag .empty,body.drag .deck{border-color:var(--accent)}
+kbd{font:400 12px var(--mono);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.alb{margin-top:18px}
+.alb h3{font:700 17px var(--display);margin:0;padding:8px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.alb h3 small{font:400 12px var(--mono);color:var(--muted);white-space:nowrap}
+li.miss{cursor:default;color:var(--muted)}
+li.miss:hover{background:none}
+.chip{margin-top:12px;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.empty{margin-top:16px}
+.q{width:100%;padding:11px 16px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit}
+.bc{display:flex;gap:12px;align-items:center}
+#back{color:var(--accent);font:500 13px var(--body);text-transform:none;letter-spacing:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.card{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.card:hover{border-color:var(--accent)}
+.card b{font:700 16px/1.2 var(--display);overflow-wrap:anywhere}
+.card small{color:var(--muted);font-size:12px}
+.deck{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 6px 24px rgba(0,0,0,.18)}
+@media(max-width:600px){canvas{display:none}.deck{padding:14px;gap:10px}}
+header{flex-wrap:nowrap}
+.q{flex:1;min-width:0}
+.add{flex:none;width:44px;height:44px;padding:0;font-size:26px;line-height:1}
+.keys{color:var(--muted);font-size:13px}
+:root:root:root{--bg:#12131c;--surface:#20222c;--ink:#ffffff;--muted:#9a9ca8;--line:#2c2f3b;--accent:#22c55e;--accent-ink:#04130a;--well:#191b24;--display:"Outfit",system-ui,sans-serif;--body:"Outfit",system-ui,sans-serif;color-scheme:dark}
+body{padding-block:28px 190px;font-size:16px}
+header{flex-wrap:wrap}
+h1{font:700 clamp(34px,10vw,44px)/1 var(--display);flex:1;order:1;min-width:0}
+.add{order:2;background:none;color:var(--ink);border:2px solid var(--ink);width:40px;height:40px;font-size:24px}
+.q{order:3;flex:1 0 100%;border-radius:12px;border-color:transparent}
+h2{align-items:center}
+.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{display:grid;grid-template-columns:60px minmax(0,1fr);column-gap:12px;row-gap:2px;padding:8px;border:0;border-radius:12px;align-items:center}
+.card::before{content:"";grid-row:1/3;width:60px;height:60px;border-radius:8px;background:linear-gradient(135deg,hsl(var(--h,150) 70% 45%),hsl(calc(var(--h,150) + 80) 70% 45%))}
+.card[data-i]::before{background:var(--img)}
+.card:nth-child(4n+2){--h:260}
+.card:nth-child(4n+3){--h:330}
+.card:nth-child(4n){--h:30}
+.card b{align-self:end;font:500 16px/1.2 var(--display)}
+.card small{align-self:start;font-size:13px}
+.card:hover{background:var(--line)}
+li{border-bottom:0}
+.alb h3{font-size:22px}
+.deck{position:fixed;bottom:calc(64px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:min(696px,calc(100% - 24px));background:#0e3a4a;color:#ffffff;border:0;border-radius:14px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;z-index:5;overflow:hidden}
+.deck::before{content:"";position:absolute;top:0;left:0;height:3px;width:var(--p,0%);background:var(--accent)}
+.deck canvas,.deck .seek,.deck .vol,.deck #shuf,.deck #rep,.deck #prev{display:none}
+.deck .now{cursor:pointer}
+.deck .now b{font:500 18px/1.2 var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deck .now span{color:#b8cfd6}
+.deck .ib{color:#ffffff}
+.deck .ib.play{background:none;width:44px;height:44px}
+.deck.open{grid-template-columns:minmax(0,1fr);gap:14px;padding:18px}
+.deck.open::before{display:none}
+.deck.open canvas{display:block;background:#0a2c39}
+.deck.open .seek{display:grid}
+.deck.open .vol{display:flex;color:#b8cfd6}
+.deck.open .t{color:#b8cfd6}
+.deck.open #shuf,.deck.open #rep,.deck.open #prev{display:grid}
+.deck.open .ib.play{background:var(--accent);color:var(--accent-ink);width:56px;height:56px}
+.deck .ib:hover,.deck .ib[aria-pressed="true"]{background:#0a2c39}
+.nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:linear-gradient(transparent,var(--bg) 40%);padding:22px 0 calc(8px + env(safe-area-inset-bottom,0px));z-index:4}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font:500 12px var(--body);min-width:72px}
+.nav svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav .on{color:var(--accent)}
+.vol,canvas{display:none!important}
+</style>
+<div class="wrap">
+  <header>
+    <h1 id="hi">Risuona</h1>
+    <input type="search" id="q" class="q" placeholder="Cerca artista, album o brano" aria-label="Cerca">
+    <button class="add" id="addBtn" title="Aggiungi brani" aria-label="Aggiungi brani">+</button>
+    <input type="file" id="file" accept="audio/*" multiple hidden>
+    <input type="file" id="imgf" accept="image/*" hidden>
+  </header>
+
+
+  <section>
+    <h2><span class="bc"><button id="back" hidden>‹ Indietro</button><span id="crumb">Artisti</span></span><span id="count"></span></h2>
+    <button class="chip" id="only" aria-pressed="false">Solo brani caricati</button>
+    <div id="list"></div>
+    <div class="empty" id="empty"><b>Nessun file caricato</b>Premi “+” in alto e scegli i tuoi MP3: vengono abbinati ai brani della discografia.</div>
+  </section>
+  <p class="keys">L’abbinamento usa il nome del file, che deve contenere il titolo del brano. I file restano salvati in questo browser.</p>
+  <section class="deck">
+    <canvas id="cv" width="680" height="120" aria-hidden="true"></canvas>
+    <div class="now"><b id="title">Nessun brano</b><span id="sub">Carica i tuoi file audio</span></div>
+    <div class="seek">
+      <span class="t" id="cur">0:00</span>
+      <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Posizione">
+      <span class="t" id="dur">0:00</span>
+    </div>
+    <div class="ctl">
+      <div class="grp">
+        <button class="ib" id="shuf" aria-pressed="false" title="Casuale"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.3 3.1-1.3-1.7L13.4 6H17V3zM3 6h4.6l8 12H17v-3l4 4-4 4v-3h-2.6l-8-12H3V6zm0 12h3.4l2.2-3.3 1.2 1.8L7.6 20H3v-2z"/></svg></button>
+        <button class="ib" id="prev" title="Precedente"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="ib play" id="play" title="Riproduci"><svg viewBox="0 0 24 24"><path id="pi" d="M7 4v16l13-8z"/></svg></button>
+        <button class="ib" id="next" title="Successivo"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+        <button class="ib rep1" id="rep" data-m="off" aria-pressed="false" title="Ripeti"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+      </div>
+      <label class="vol"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 5V4L8 9H4zm12 3a4 4 0 0 0-2-3.5v7A4 4 0 0 0 16 12z"/></svg>
+        <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Volume"></label>
+    </div>
+  </section>
+  <nav class="nav">
+    <button id="nHome" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button id="nSearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Cerca</button>
+    <button id="nLib"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Libreria</button>
+  </nav>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const a=new Audio(),T=[];let i=-1,only=false,shuf=false,rep='off',ac,an,buf,seeking=false;
+const fmt=s=>isFinite(s)?Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'):'–:––';
+try{const v=localStorage.getItem('gd_vol');if(v!==null)$('vol').value=v}catch(e){}
+a.volume=+$('vol').value;
+
+const D=(t,y,s,ar='Ultimo')=>({t,y,ar,tr:s.split(';').map(x=>x.split('|'))});
+const DISC=[
+D('Pianeti',2017,"Chiave|3:59;Il capolavoro|2:58;Pianeti|3:44;Mille universi|4:08;Sabbia|3:38;Racconterò di te|3:24;Giusy|3:26;Ovunque tu sia|3:19;La storia di un uomo|3:24;Wendy|3:13;L'unica forza che ho|4:03;Sogni appesi|3:32;L'eleganza delle stelle|3:02;Stasera|4:04"),
+D('Peter Pan',2018,"Buon viaggio|3:11;Canzone stupida|3:56;La stella più fragile dell'universo|3:46;Cascare nei tuoi occhi|3:46;Poesia senza veli|3:38;Il ballo delle incertezze|3:23;Peter Pan (Vuoi volare con me?)|3:46;Dove il mare finisce|3:20;Le stesse cose che facevo con te|3:12;Ti dedico il silenzio|3:54;Domenica|3:10;Vorrei soltanto amarti|2:58;Il vaso|4:12;La casa di un poeta (Piano Live Studio)|3:31;Farfalla bianca (Piano Live Studio)|3:15;Forse dormirai|3:58"),
+D('Colpa delle favole',2019,"Colpa delle favole|3:04;I tuoi particolari|3:39;Quando fuori piove|3:41;Ipocondria|3:01;Fateme cantà|4:11;Rondini al guinzaglio|4:00;Amati sempre|4:04;Quella casa che avevamo in mente|3:24;Piccola stella|3:52;Aperitivo grezzo|3:23;Fermo|2:40;Il tuo nome (Comunque vada con te)|3:01;La stazione dei ricordi|4:10"),
+D('Solo',2021,"Il bambino che contava le stelle|2:27;Niente|3:58;Sul finale|3:54;Solo|3:42;Spari sul petto|3:10;Isolamento|3:01;Quel filo che ci unisce|4:14;Supereroi|4:23;La finestra di Greta|3:15;Buongiorno vita|3:10;Quei ragazzi|3:25;Non sapere mai dove si va|3:02;22 settembre|3:50;7+3|3:13;Tutto questo sei tu|4:04;Non amo|2:43;2:43 AM|3:08"),
+D('Alba',2023,"Alba|3:30;Nuvole in testa|3:14;Amare|3:18;Tutto diventa normale|3:16;Tu|3:31;Vivo per vivere|3:54;Ti va di stare bene|3:33;Vieni nel mio cuore|2:53;Sono pazzo di te|3:41;Joker|3:12;La pioggia di Londra|3:36;Tornare a te|3:55;Le solite paure|2:53;Titoli di coda|3:34"),
+D('Altrove',2024,"Altrove|3:25;Lunedì|3:14;Quando saremo vecchi|3:22;Neve al sole|3:20;Quei due innamorati|3:30;Amore di strada|2:58;Occhi lucidi|3:24;Diluvio universale (feat. Mezzosangue)|2:41"),
+D('Il giorno che aspettavo',2026,"Il giorno che aspettavo;Qualcosa di bello;Romantica;Acquario;Questa insensata voglia di te;Quando dorme la città;Io non so;Cuore di plastica;Avevamo cent'anni;Ci siamo detti tutto"),
+D('Singoli ed extra','',"Equilibrio mentale|3:35;Vorrei rinascere fiore|2:22;Lunedì (unplugged)|3:50;La parte migliore di me;Bella davvero;L'ultima poesia (con Geolier);L'eternità (il mio quartiere) (con Fabrizio Moro);Tutto"),
+D(`Poeta urbano`,2013,`Io posso;Fammi vivere;Quanto darei;L'ammore overo;Happy Meal;Capocannonieri;Atleti;L'occhio del massone;Sfizio personale;Fatti non parole;Io ci sarò;Ultimo viaggio`,'Rocco Hunt'),
+D(`'A verità`,2014,`Senza chances;Ce magnamm;Nu juorno buono;'A verità;Giovane disorientato;Na vota ancora;Tutto resta;Vieni con me;Devo parlare;RH Staff;Replay;Come una cometa;Credi;The Show;Die Young;Nun rimpiango niente;'A voce de guagliune;Nun è fernut'`,'Rocco Hunt'),
+D(`SignorHunt`,2015,`Tengo voglia 'e sunnà;Vene e vvà;Eco do mare;Se mi chiami;Una moneta e un sogno;O' posto mio;O' reggae de guagliune;SignorHunt;Allora no!;Qualcosa di strano;Back in the Days;Maletiempo;Nu brutto suonno;Altri 100 anni;Marcos;'Na stanza nostra`,'Rocco Hunt'),
+D(`Libertà`,2019,`Mai più (feat. Achille Lauro);Nun se ne va;Ti volevo dedicare (feat. J-Ax & Boomdabash);Maledetto sud (feat. Clementino);Street Life;Nisciun' (feat. Geolier);Buonanotte amò;Se tornerai (feat. Neffa);Discofunk;Nun me vuò bene cchiù;A Libertà;Grande bugia;Nun è giusto;Benvenuti in Italy;Ngopp' a luna;Stu core t'apparten`,'Rocco Hunt'),
+D(`Rivoluzione`,2021,`Nel percorso (Lele Adani Intro);Rivoluzione;Solido;Fantastica;L'urdemo vase;Caffelatte;Vada come vada;Fiocco azzurro;Regole da infrangere;Fa'o' brav';Te penso ancora;Un bacio all'improvviso;Che me chiamme a fa?;A un passo dalla Luna;Sultant' a mia`,'Rocco Hunt'),
+D(`...Ma cosa vuoi che sia una canzone...`,1978,`La nostra relazione;...E poi mi parli di una vita insieme;Silvia;Tu che dormivi piano (volò via);Jenny è pazza;Ambarabaciccicoccò;Ed il tempo crea eroi;Ciao (strumentale)`,'Vasco Rossi'),
+D(`Non siamo mica gli americani!`,1979,`Io non so più cosa fare;Fegato, fegato spappolato;Sballi ravvicinati del 3º tipo;(per quello che ho da fare) Faccio il militare;La strega (la diva del sabato sera);Albachiara;Quindici anni fa;Va bè (se proprio te lo devo dire)`,'Vasco Rossi'),
+D(`Colpa d'Alfredo`,1980,`Non l'hai mica capito;Colpa d'Alfredo;Susanna;Anima fragile;Alibi;Sensazioni forti;Tropico del Cancro;Asilo Republic`,'Vasco Rossi'),
+D(`Siamo solo noi`,1981,`Siamo solo noi;Incredibile romantica;Dimentichiamoci questa città;Voglio andare al mare;Brava;Ieri ho sgozzato mio figlio;Che ironia;Valium`,'Vasco Rossi'),
+D(`Vado al massimo`,1982,`Sono ancora in coma;Cosa ti fai;Ogni volta;Vado al massimo;Credi davvero;Amore!?!;Canzone;Splendida giornata;La noia`,'Vasco Rossi'),
+D(`Bollicine`,1983,`Bollicine;Una canzone per te;Portatemi Dio;Vita spericolata;Deviazioni;Giocala;Ultimo domicilio conosciuto;Mi piaci perché`,'Vasco Rossi'),
+D(`Cosa succede in città`,1985,`Cosa c'è;Domani sì, adesso no;Cosa succede in città;Toffee;Ti taglio la gola;Una nuova canzone per lei;T'immagini;Bolle di sapone;Dormi, dormi`,'Vasco Rossi'),
+D(`C'è chi dice no`,1987,`Vivere una favola;C'è chi dice no;Ridere di te;Blasco Rossi;Brava Giulia;Ciao;Non mi va;Lunedì`,'Vasco Rossi'),
+D(`Liberi liberi`,1989,`Domenica lunatica;Ormai è tardi;...Muoviti!;Vivere senza te;Tango... (della gelosia);Liberi...liberi;Dillo alla Luna;Stasera!`,'Vasco Rossi'),
+D(`Gli spari sopra`,1993,`Lo show;Non appari mai;Gli spari sopra (Celebrate);Vivere;Gabri;Ci credi;Delusa;...Stupendo;Vuoi star ferma!;L'uomo che hai di fronte;Occhi blu;Hai ragione tu;Walzer di gomma`,'Vasco Rossi'),
+D(`Nessun pericolo... per te`,1996,`Un gran bel film;Benvenuto;Gli angeli;Mi si escludeva;Sally;Praticamente perfetto;Le cose che non dici;Nessun pericolo... per te;Io perderò;Marea`,'Vasco Rossi'),
+D(`Canzoni per me`,1998,`E il mattino;L'una per te;Io no....;Quanti anni hai;Laura;La favola antica;Idea 77;Rewind`,'Vasco Rossi'),
+D(`Stupido hotel`,2001,`Siamo soli;Ti prendo e ti porto via;Standing ovation;Stupido hotel;Io ti accontento;Perché non piangi per me;Tu vuoi da me qualcosa;Stendimi;Quel vestito semplice;Canzone generale`,'Vasco Rossi'),
+D(`Buoni o cattivi`,2004,`Buoni o cattivi;Come stai;Anymore;Hai mai;Non basta niente;Dimenticarsi;Da sola con te;Cosa vuoi da me;E…;Señorita;Rock 'n' roll show;Un senso`,'Vasco Rossi'),
+D(`Il mondo che vorrei`,2008,`Il mondo che vorrei;Vieni qui;Gioca con me;E adesso che tocca a me;Dimmelo te;Cosa importa a me;Non vivo senza te;Qui si fa la storia;Colpa del whisky;Non sopporto;Ho bisogno di te;Basta poco`,'Vasco Rossi'),
+D(`Vivere o niente`,2011,`Vivere non è facile;Manifesto futurista della nuova umanità;Starò meglio di così;Prendi la strada;Dici che;Eh... già;Sei pazza di me;Vivere o niente;L'aquilone;Non sei quella che eri;Stammi vicino;Maledetta ragione`,'Vasco Rossi'),
+D(`Sono innocente`,2014,`Sono innocente ma...;Duro incontro;Come vorrei;Guai;Lo vedi;Aspettami;Dannate nuvole;Il blues della chitarra sola;Accidenti come sei bella;Quante volte;Cambia-menti;Rock Star`,'Vasco Rossi'),
+D(`Siamo qui`,2021,`XI comandamento;L'amore l'amore;Siamo qui;La pioggia alla domenica;Tu ce l'hai con me;Un respiro in più;Ho ritrovato te;Prendiamo il volo;Patto con riscatto;Una canzone d'amore buttata via`,'Vasco Rossi'),
+D(`Riflessi di me`,2012,`Sola;Arcobaleni;Quello che vorrei;Mai più;Se cadrai;Tutto quello che ho;Distratto;Il più bell'abbraccio;Riflessi di me;Honey Sun;Non mi dire;Un nuovo nome;Indelebile`,'Francesca Michielin'),
+D(`di20`,2015,`diVento;L'amore esiste;Almeno tu;Lontano;Amazing;Tutto questo vento;Battito di ciglia;Un cuore in due;Io e te;Sons and Daughters;25 febbraio`,'Francesca Michielin'),
+D(`2640`,2018,`Comunicare;Bolivia;Noleggiami ancora un film;Io non abito al mare;Tropicale;E se c'era....;Scusa se non ho gli occhi azzurri;Vulcano;Due galassie;La Serie B;Tapioca;Lava;Alonso`,'Francesca Michielin'),
+D(`Feat (stato di natura)`,2020,`Stato di natura;Monolocale;Sposerò un albero;Gange;Yo no tengo nada;Riserva naturale;Acqua e sapone;La vie ensemble;Star Trek;Cheyenne;Leoni`,'Francesca Michielin'),
+D(`Cani sciolti`,2023,`Occhi grandi grandi;Un bosco;Padova può ucciderti più di Milano;Ghetto perfetto;Quello che ancora non c'è;Piccola città;Bonsoir;Verbena;Carmen;Non sono io la tua solitudine;Claudia;d.punto;Disco dance`,'Francesca Michielin'),
+D(`Memories`,2015,`Intro;Memories;The Way You Do;Honey;I'm a Devil;Tutto quello che ho;Grazie a me;Talent Show;Monday (Skit);Ti amo ma;Merry Christmas;New Bitch;Carillon;Outro;Night Club (DNB)`,'Mr. Rain'),
+D(`Butterfly Effect`,2018,`Intro: The Winners;One Man Band;Superstite (feat. Osso);I grandi non piangono mai;Five Things (Skit);La storia di Sam;Ipernova;Fuori luogo;Rainbow Soda;Pianeti;Grazie a me (Acoustic);Carillon (Acoustic);Outro`,'Mr. Rain'),
+D(`Petrichor`,2021,`Intro;Fiori di Chernobyl;Nemico di me stesso;A forma di origami;Sentieri sulle guance;Meteoriti;Sindrome di Stoccolma;Elevator (Skit);Non fa per me;Non c'è più musica;9.3;Ricominciare da me (outro)`,'Mr. Rain'),
+D(`Fragile`,2022,`Crisalidi;Qui;Fragile;Neve su Marte;E invece no;Sincero;Atlantide;3.10 AM;Nero;Aria`,'Mr. Rain'),
+D(`Pianeta di Miller`,2024,`Due altalene;Paura del buio;La fine del mondo;Figli della notte;L'ultima volta;23 anni, 4 mesi, 8 giorni (skit);Supereroi;Un milione di notti;Immortali;Vite precedenti;Sempre un po' di te;Outro;Superhéroes`,'Mr. Rain'),
+D(`Night Visions`,2012,`Radioactive;Tiptoe;It's Time;Demons;On Top of the World;Amsterdam;Hear Me;Every Night;Bleeding Out;Underdog;Nothing Left to Say / Rocks`,'Imagine Dragons'),
+D(`Smoke + Mirrors`,2015,`Shots;Gold;Smoke and Mirrors;I'm So Sorry;I Bet My Life;Polaroid;Friction;It Comes Back to You;Dream;Trouble;Summer;Hopeless Opus;The Fall`,'Imagine Dragons'),
+D(`Evolve`,2017,`I Don't Know Why;Whatever It Takes;Believer;Walking the Wire;Rise Up;I'll Make It Up to You;Yesterday;Mouth of the River;Thunder;Start Over;Dancing in the Dark`,'Imagine Dragons'),
+D(`Origins`,2018,`Natural;Boomerang;Machine;Cool Out;Bad Liar;West Coast;Zero;Bullet in a Gun;Digital;Only;Stuck;Love`,'Imagine Dragons'),
+D(`Mercury – Act 1`,2021,`My Life;Lonely;Wrecked;Monday;#1;Easy Come Easy Go;Giants;It's Ok;Dull Knives;Follow You;Cutthroat;No Time for Toxic People;One Day`,'Imagine Dragons'),
+D(`Mercury – Act 2`,2022,`Bones;Symphony;Sharks;I Don't Like Myself;Blur;Higher Ground;Crushed;Take It Easy;Waves;I'm Happy;Ferris Wheel;Peace of Mind;Sirens;Tied;Younger;I Wish;Continual (feat. Cory Henry);They Don't Know You Like I Do`,'Imagine Dragons'),
+D(`Loom`,2024,`Wake Up;Nice to Meet You;Eyes Closed;Take Me to the Beach;In Your Corner;Gods Don't Pray;Don't Forget Me;Kid;Fire in These Hills`,'Imagine Dragons'),
+D(`A me piace così`,2010,`Ho toccato il cielo;Cullami;Con le nuvole;La lontananza;Petali;Dimmi che senso ha;Arida;Emozioniamoci ora;Purché tua;Dalle vene;Colori;On Line`,'Emma'),
+D(`Sarò libera`,2011,`Tra passione e lacrime;Sarò libera;Senza averti mai;Non sono solo te;Ti capita mai;Dove finisce la notte;Acqua e ghiaccio;Maledetto quel giorno;Cercavo amore;Da quando mi hai lasciato tu;Un attimo;Protagonista;Scusa se vado via`,'Emma'),
+D(`Schiena`,2013,`Amami;La mia felicità;Dimentico tutto;Ma che vita fai;Trattengo il fiato;1, 2, 3;In ogni angolo di me;L'amore non mi basta;Se rinasci;Chimera;Schiena`,'Emma'),
+D(`Adesso`,2015,`Adesso (ti voglio bene);Occhi profondi;Quando le canzoni finiranno;Facciamola più semplice;Finalmente;Arriverà l'amore;In viaggio;Io di te non ho paura;Per questo paese;Argento adesso;Il paradiso non esiste;Che sia tu;Poco prima di dormire`,'Emma'),
+D(`Essere qui`,2018,`L'isola;Le ragazze come me;Sottovoce;Mi parli piano;Effetto domino;Le cose che penso;Portami via da te;Luna e l'altra;Malelingue;Sorrido lo stesso;Coraggio`,'Emma'),
+D(`Souvenir`,2023,`Iniziamo dalla fine;Amore cane;Mezzo mondo;Intervallo;Sentimentale;Carne viva;Capelli corti;Indaco;Taxi sulla Luna`,'Emma'),
+D(`Nali`,2011,`Giorno per giorno;Fuori;Cado giù;Inverno;Diamante lei e luce lui;Questo bellissimo gioco;Solo;Brividi;Mi sei scoppiato dentro al cuore (Live)`,'Annalisa'),
+D(`Mentre tutto cambia`,2012,`Senza riserva;Non cambiare mai;Lucciole;Per una notte o per sempre;Tutto sommato;Bolle;Ottovolante;Ancora un'altra volta;Tra due minuti è primavera;Per te;Non ho che questo amore;Prato di orchidee`,'Annalisa'),
+D(`Non so ballare`,2013,`Scintille;Alice e il blu;A modo mio amo;Ed è ancora settembre;Spara amore mio;Io tu e noi;Tutta l'altra gente;Meraviglioso addio;Non so ballare;Tornerò ad amare;La prima volta`,'Annalisa'),
+D(`Splende`,2015,`Vincerò;Splende;Un bacio prima di morire;L'ultimo addio;Sento solo il presente;Questo amore;Una finestra tra le stelle;Niente tranne noi;Se potessi;Posizione fetale;Ti sento`,'Annalisa'),
+D(`Se avessi un cuore`,2016,`Se avessi un cuore;Leggerissima;Noi siamo un'isola;Coltiverò l'amore;Uno;Potrei abituarmi;A cuore spento;Inatteso;Le coincidenze;Quello che non sai di me;Il diluvio universale;Used to You`,'Annalisa'),
+D(`Bye Bye`,2018,`Bye Bye;Direzione la vita;Il mondo prima di te;Bianco nero e grigio;Le parole non mentono;Un domani;Illuminami;Ogni festa;Dimenticherai;Il prossimo weekend;Specchio;Superare;Dov'è che si va`,'Annalisa'),
+D(`Nuda`,2020,`Nuda;Romantica (feat. J-Ax);Tsunami;Houseparty;Cena di Natale;Bonsai;Piove col sole;Principessa (feat. Chadia Rodríguez);Graffiti;D'oro;A te cosa piace fare;Vento sulla Luna (feat. Rkomi);N.U.D.A. (nascere umani diventare animali) (feat. Achille Lauro)`,'Annalisa'),
+D(`E poi siamo finiti nel vortice`,2023,`Bellissima;Ragazza sola;Euforia;Mon Amour;Rosso corallo;Bollicine;Gommapiuma;Aria;La crisi a Saint-Tropez;Ti dico solo;Stelle;Indaco violento`,'Annalisa'),
+D(`Ma io sono fuoco`,2025,`Dipende;Piazza San Marco;Delusa;Esibizionista;Maschio;Avvelenata;Emanuela;Chiodi;Io sono;Amica;Una tigre sul letto continua a parlarmi`,'Annalisa'),
+D(`Gira, il mondo gira`,2023,`Una vita;L'anima balla;Ho un amico;Polvere;Menomale che c'è il mare;Un'altra volta;L'amore va;Tutto male;Bianca;Fammi morire;Canto alla luna;Tutto con te`,'Olly'),
+D(`Tutta vita`,2024,`È festa;I cantieri del Giappone;Per due come noi;Quei ricordi là;Noi che;Devastante;A noi non serve far l'amore;Sopra la stessa barca;La lavatrice si è rotta;Scarabocchi;A squarciagola;Il campione`,'Olly'),
+D(`Before Wanderlust`,2019,`Wanderlust!;Il giro del mondo;Disegno;Testa tra le nuvole, Pt. 0;Testa tra le nuvole, Pt. 1;Temporale (24 marzo);Dove sei?;Tempo al tempo;Cin cin`,'Alfa'),
+D(`Nord`,2021,`Nord;Snob;Testa tra le nuvole, Pt. 2;Non la ascoltare;Sul più bello (Out of My League);San Lorenzo;Bevo tutta la notte;Non ricordo il nome;Sold Out;Stupefacente`,'Alfa'),
+D(`Non so chi ha creato il mondo ma so che era innamorato`,2024,`Non so chi ha creato il mondo;Ma so che era innamorato;Nei tuoi occhi cosa c'è;Vai!;Vabbè ciao;Frida (Interlude);Il mio colore preferito;Sofia;Ma tu come stai;Metti a posto`,'Alfa'),
+D(`Diamo un calcio all'aldilà`,2015,`Castagne genge;Django;Il sonno ed il furto (Storia di un coinquilino);La strategia della tenzone;Sudowoodo;Rodger;Le Gentil;Me Want Marò Back`,'Pinguini Tattici Nucleari'),
+D(`Gioventù brucata`,2017,`Intro Montanelli;Sciare;Gioventù brucata;Ninna nanna per genitori disattenti;L'uomo che inventò il fuoco;Irene;Senti che cantare questi!;Pula;79;Gigi cinque ottavi;Tetris;Il concorso musicale`,'Pinguini Tattici Nucleari'),
+D(`Fuori dall'hype`,2019,`Fuori dall'hype;Antartide;Lake Washington Boulevard;Monopoli;Nonono;Scatole;Sashimi;La banalità del mare;Verdura;Freddie`,'Pinguini Tattici Nucleari'),
+D(`Ahia!`,2020,`Scooby Doo;Scrivile scemo;Bohémien;Pastello bianco;La storia infinita;Giulia;Ahia!`,'Pinguini Tattici Nucleari'),
+D(`Fake News`,2022,`Zen;L'ultima volta;Hold on;Stage Diving;Ricordi;Melting Pop;Forse;Fede;Dentista Croazia;Hikikomori;Giovani Wannabe;Barfly;Non sono cool;Cena di classe`,'Pinguini Tattici Nucleari'),
+D(`Hello World`,2024,`Hello World;Per non sentire la fine del mondo;Islanda;Burnout;Nevica;Your dog;Amaro;Alieni;Fuck you Vincenzo;Romantico ma muori;Piccola volpe;Nativi digitali;Bottiglie vuote;Migliore;Titoli di coda`,'Pinguini Tattici Nucleari'),
+D(`Voglia di vivere`,2023,`Ci pensiamo domani;Mani vuote;Voglia di vivere;Vita morte e miracoli;Eccetera;Nove maggio (Live)`,'Angelina Mango'),
+D(`Poké melodrama`,2024,`Gioielli di famiglia;Melodrama;La noia;Uguale a me (feat. Marco Mengoni);Crush;Smile;Diamoci una tregua (feat. Bresh);Edmund e Lucy;Cup of Tea;Una bella canzone;Fila indiana;Invece sì (feat. Dani Faiv);Che t'o dico a fa';Another World (feat. VillaBanks)`,'Angelina Mango'),
+D(`Caramé`,2025,`Caramé (intro);7up;Le scarpe slacciate;Pacco fragile;Ioeio (feat. Madame);La vita va presa a morsi;Come un bambino;Mylove;Nina canta (intermezzo);Velo sugli occhi;Ci siamo persi la fine;Tutto all'aria;Bomba a mano;Aiaiai;Igloo;Cosicosicosicosì`,'Angelina Mango')
+];
+const norm=s=>' '+s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' ';
+const KEYS=[];
+DISC.forEach((al,ai)=>al.tr.forEach((tr,ti)=>{const f=norm(tr[0]),s=norm(tr[0].replace(/\(.*?\)/g,''));KEYS.push([f,ai,ti]);if(s!==f&&s.trim())KEYS.push([s,ai,ti])}));
+const ARTS=[...new Set(DISC.map(d=>d.ar))];
+function match(name){const n=norm(name),as=ARTS.filter(a=>n.includes(norm(a)));let b=null,be=-1;for(const k of KEYS){if(as.length&&!as.includes(DISC[k[1]].ar))continue;const p=n.lastIndexOf(k[0]);if(p<0)continue;const e=p+k[0].length;if(e>be||(e===be&&k[0].length>b[0].length)){b=k;be=e}}return b}
+let db;
+function idb(){return new Promise((res,rej)=>{try{const r=indexedDB.open('giradischi',2);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('f'))d.createObjectStore('f',{keyPath:'id'});if(!d.objectStoreNames.contains('img'))d.createObjectStore('img',{keyPath:'k'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej()}catch(e){rej()}})}
+idb().then(d=>{db=d;const g=d.transaction('img').objectStore('img').getAll();g.onsuccess=()=>{g.result.forEach(x=>IMG[x.k]=URL.createObjectURL(x.blob));render();const q=d.transaction('f').objectStore('f').getAll();q.onsuccess=()=>put(q.result,false)}}).catch(()=>{});
+function add(files){
+  put([...files].filter(f=>f.type.startsWith('audio/')||/\.(mp3|wav|flac|ogg|m4a|aac|opus)$/i.test(f.name)).map(f=>({id:Date.now()+'-'+Math.random().toString(36).slice(2),name:f.name,blob:f})),true);
+}
+function put(recs,save){
+  recs.forEach(r=>{
+    const t={id:r.id,name:r.name.replace(/\.[^.]+$/,'').replace(/mp3j\.cc/i,''),url:URL.createObjectURL(r.blob),dur:NaN,ai:null,ti:null};
+    const m=match(t.name);
+    if(m&&!T.some(x=>x.ai===m[1]&&x.ti===m[2])){t.ai=m[1];t.ti=m[2];t.name=DISC[m[1]].tr[m[2]][0];const ck='al-'+m[1];if(!IMG[ck])cover(r.blob).then(b=>{if(b&&!IMG[ck])setImg(ck,b)})}
+    T.push(t);
+    const p=new Audio();p.preload='metadata';p.src=t.url;
+    p.onloadedmetadata=()=>{t.dur=p.duration;render()};
+    if(save&&db)try{db.transaction('f','readwrite').objectStore('f').put(r)}catch(e){}
+  });
+  const cur=T[i];
+  T.sort((x,y)=>(x.ai??99)-(y.ai??99)||(x.ti??0)-(y.ti??0));
+  if(cur)i=T.indexOf(cur);
+  render();if(i<0&&T.length)load(0,false);
+}
+function row(n,name,d,k){
+  const li=document.createElement('li');
+  li.innerHTML='<span class="n">'+n+'</span><span class="nm"></span><span class="d">'+d+'</span>'+(k==null?'<span></span>':'<button class="x" title="Rimuovi file" aria-label="Rimuovi file">×</button>');
+  li.children[1].textContent=name;
+  if(k==null){li.className='miss';return li}
+  li.tabIndex=0;if(k===i)li.className='on';
+  li.onclick=e=>{if(e.target.classList.contains('x'))del(k);else load(k,true)};
+  li.onkeydown=e=>{if(e.key==='Enter')load(k,true)};
+  return li;
+}
+function sect(l,t,y,c,rows){
+  const s=document.createElement('section');s.className='alb';
+  const h=document.createElement('h3');h.innerHTML='<span></span><small></small>';
+  h.children[0].textContent=t;h.children[1].textContent=(y?y+' · ':'')+c;
+  const ol=document.createElement('ol');rows.forEach(r=>ol.appendChild(r));
+  s.append(h,ol);l.appendChild(s);
+}
+let view={l:0},q='';
+const IMG={};let pk=null;
+function card(t,s,fn,k){const b=document.createElement('button');b.className='card';b.innerHTML='<b></b><small></small>';b.children[0].textContent=t;b.children[1].textContent=s;b.onclick=fn;if(k&&IMG[k]){b.dataset.i=1;b.style.setProperty('--img','url("'+IMG[k]+'") center/cover')}return b}
+function pick(l,k,txt){const b=document.createElement('button');b.className='chip';b.textContent=txt;b.onclick=()=>{pk=k;$('imgf').click()};l.appendChild(b)}
+function setImg(k,blob){if(IMG[k])URL.revokeObjectURL(IMG[k]);IMG[k]=URL.createObjectURL(blob);if(db)try{db.transaction('img','readwrite').objectStore('img').put({k,blob})}catch(e){}render()}
+async function cover(f){try{
+  const h=new Uint8Array(await f.slice(0,10).arrayBuffer());
+  if(h[0]!==73||h[1]!==68||h[2]!==51||h[3]<3)return null;
+  const v=h[3],ss=(x,o)=>(x[o]<<21)|(x[o+1]<<14)|(x[o+2]<<7)|x[o+3],pl=(x,o)=>((x[o]<<24)|(x[o+1]<<16)|(x[o+2]<<8)|x[o+3])>>>0;
+  const b=new Uint8Array(await f.slice(10,10+ss(h,6)).arrayBuffer());let p=0;
+  if(h[5]&64)p=v===4?ss(b,0):pl(b,0)+4;
+  while(p+10<=b.length&&b[p]){
+    const id=String.fromCharCode(b[p],b[p+1],b[p+2],b[p+3]),s=v===4?ss(b,p+4):pl(b,p+4);p+=10;
+    if(id==='APIC'){
+      let o=p,m='';const enc=b[o++],end=p+s;
+      while(o<end&&b[o])m+=String.fromCharCode(b[o++]);o+=2;
+      if(enc===1||enc===2){while(o+1<end&&(b[o]||b[o+1]))o+=2;o+=2}else{while(o<end&&b[o])o++;o++}
+      return o<end?new Blob([b.subarray(o,end)],{type:m.includes('/')?m:'image/jpeg'}):null;
+    }
+    p+=s;
+  }
+}catch(e){}return null}
+function grid(l,items){const g=document.createElement('div');g.className='grid';items.forEach(x=>g.appendChild(x));l.appendChild(g)}
+function clr(){q='';$('q').value='';render();scrollTo(0,0)}
+function render(){
+  const l=$('list');l.innerHTML='';const map={};
+  T.forEach((t,k)=>{if(t.ai!=null)map[t.ai+'-'+t.ti]=k});
+  const have=ai=>DISC[ai].tr.filter((_,ti)=>map[ai+'-'+ti]!=null).length;
+  const tot=DISC.reduce((s,d)=>s+d.tr.length,0),hv=T.filter(t=>t.ai!=null).length;
+  const oth=T.map((t,k)=>[t,k]).filter(x=>x[0].ai==null);
+  const trows=(ai,f)=>{const r=[];DISC[ai].tr.forEach((tr,ti)=>{const k=map[ai+'-'+ti];if(f&&!f(tr[0]))return;if(k!=null||!only)r.push(row(ti+1,tr[0],k!=null&&isFinite(T[k].dur)?fmt(T[k].dur):tr[1]||'',k))});return r};
+  const orows=f=>oth.filter(x=>!f||f(x[0].name)).map((x,n)=>row(n+1,x[0].name,fmt(x[0].dur),x[1]));
+  const ids=a=>DISC.map((_,ai)=>ai).filter(ai=>DISC[ai].ar===a);
+  const akey=a=>a==='Ultimo'?'ar':'ar-'+a;
+  const acard=(ai,wa)=>card(DISC[ai].t,(wa===1?DISC[ai].ar+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+DISC[ai].tr.length,()=>{view={l:2,ai};clr()},'al-'+ai);
+  const arcard=a=>{const x=ids(a);return card(a,x.length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+DISC[ai].tr.length,0),()=>{view={l:1,ar:a};clr()},akey(a))};
+  const msg=s=>{const p=document.createElement('p');p.className='keys';p.textContent=s;l.appendChild(p)};
+  let crumb='Artisti';
+  if(q){
+    crumb='Risultati';const n=norm(q).trim(),hit=s=>norm(s).includes(n);
+    const c=ARTS.filter(hit).map(arcard).concat(DISC.map((_,ai)=>ai).filter(ai=>hit(DISC[ai].t)).map(ai=>acard(ai,1)));
+    let any=c.length;if(any)grid(l,c);
+    DISC.forEach((d,ai)=>{const r=trows(ai,hit);if(r.length){any++;sect(l,d.t,d.ar,r.length,r)}});
+    const o=orows(hit);if(o.length){any++;sect(l,'Altri file','',o.length,o)}
+    if(!any)msg('Nessun risultato per “'+q+'”.');
+  }else if(view.l===0){
+    const c=ARTS.map(arcard);if(oth.length)c.push(card('Altri file',oth.length+' brani',()=>{view={l:3};clr()}));grid(l,c);
+  }else if(view.l===1){
+    crumb=view.ar;pick(l,akey(view.ar),'Scegli foto artista');grid(l,ids(view.ar).map(ai=>acard(ai)));
+  }else if(view.l===2){
+    const d=DISC[view.ai],r=trows(view.ai);crumb=d.ar;pick(l,'al-'+view.ai,'Scegli copertina');
+    if(r.length)sect(l,d.t,d.y,have(view.ai)+'/'+d.tr.length,r);else msg('Nessun brano caricato per questo album.');
+  }else if(view.l===4){
+    crumb='Libreria';
+    if(T.length)sect(l,'Brani caricati','',T.length,T.map((t,k)=>row(k+1,t.name,fmt(t.dur),k)));else msg('Nessun brano caricato. Premi + per aggiungere i tuoi file.');
+  }else{
+    crumb='Altri file';const o=orows();if(o.length)sect(l,'Altri file','',o.length,o);else{view={l:0};return render()}
+  }
+  $('crumb').textContent=crumb;$('back').hidden=!!q||view.l===0;
+  $('empty').hidden=T.length>0;
+  $('count').textContent=hv+'/'+tot+' brani';
+  ['prev','next','play'].forEach(b=>$(b).disabled=!T.length);
+}
+$('q').oninput=e=>{q=e.target.value.trim();render()};
+$('back').onclick=()=>{view=view.l===2?{l:1,ar:DISC[view.ai].ar}:{l:0};render()};
+function del(k){
+  URL.revokeObjectURL(T[k].url);
+  if(db)try{db.transaction('f','readwrite').objectStore('f').delete(T[k].id)}catch(e){}
+  T.splice(k,1);
+  if(k===i){a.pause();a.removeAttribute('src');i=-1;if(T.length)load(Math.min(k,T.length-1),false);else{$('title').textContent='Nessun brano';$('sub').textContent='Carica i tuoi file audio';$('cur').textContent=$('dur').textContent='0:00';$('seek').value=0}}
+  else if(k<i)i--;
+  render();
+}
+function load(k,play){
+  i=k;const t=T[k],al=t.ai!=null?DISC[t.ai]:null;a.src=t.url;$('title').textContent=t.name;
+  $('sub').textContent=al?al.ar+' · '+al.t+(al.y?' · '+al.y:''):'File locale';
+  if('mediaSession'in navigator)try{navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:al?al.ar:'',album:al?al.t:''})}catch(e){}
+  render();if(play)go();
+}
+$('only').onclick=e=>{only=!only;e.currentTarget.setAttribute('aria-pressed',only);render()};
+function go(){
+  if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();an=ac.createAnalyser();an.fftSize=128;buf=new Uint8Array(an.frequencyBinCount);ac.createMediaElementSource(a).connect(an);an.connect(ac.destination)}catch(e){}}
+  if(ac&&ac.state==='suspended')ac.resume();
+  a.play().catch(()=>{});
+}
+function step(d){
+  if(!T.length)return;
+  let k;
+  if(shuf&&T.length>1){do{k=Math.floor(Math.random()*T.length)}while(k===i)}
+  else k=(i+d+T.length)%T.length;
+  load(k,true);
+}
+$('addBtn').onclick=()=>$('file').click();
+$('file').onchange=e=>{add(e.target.files);e.target.value=''};
+$('play').onclick=()=>{if(i<0)return;a.paused?go():a.pause()};
+$('next').onclick=()=>step(1);
+$('prev').onclick=()=>{if(a.currentTime>3)a.currentTime=0;else step(-1)};
+$('shuf').onclick=e=>{shuf=!shuf;e.currentTarget.setAttribute('aria-pressed',shuf)};
+$('rep').onclick=e=>{rep=rep==='off'?'all':rep==='all'?'one':'off';const b=e.currentTarget;b.dataset.m=rep;b.setAttribute('aria-pressed',rep!=='off');b.title=rep==='off'?'Ripeti':rep==='all'?'Ripeti tutti':'Ripeti brano'};
+$('vol').oninput=e=>{a.volume=+e.target.value;try{localStorage.setItem('gd_vol',e.target.value)}catch(x){}};
+$('seek').oninput=()=>{seeking=true;$('cur').textContent=fmt(a.duration*$('seek').value/1000)};
+$('seek').onchange=()=>{if(isFinite(a.duration))a.currentTime=a.duration*$('seek').value/1000;seeking=false};
+a.onplay=()=>{$('pi').setAttribute('d','M6 4h4v16H6zM14 4h4v16h-4z');$('play').title='Pausa'};
+a.onpause=()=>{$('pi').setAttribute('d','M7 4v16l13-8z');$('play').title='Riproduci'};
+a.ontimeupdate=()=>{if(seeking)return;$('cur').textContent=fmt(a.currentTime);if(isFinite(a.duration))$('seek').value=a.currentTime/a.duration*1000};
+a.onloadedmetadata=()=>{$('dur').textContent=fmt(a.duration)};
+a.onended=()=>{
+  if(rep==='one'){a.currentTime=0;go()}
+  else if(shuf||i<T.length-1||rep==='all')step(1);
+};
+a.onerror=()=>{if(i>=0&&a.src)$('sub').textContent='Formato non supportato da questo browser'};
+if('mediaSession'in navigator)try{
+  navigator.mediaSession.setActionHandler('nexttrack',()=>step(1));
+  navigator.mediaSession.setActionHandler('previoustrack',()=>step(-1));
+}catch(e){}
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'&&e.code==='Space')return;
+  if(e.code==='Space'){e.preventDefault();$('play').click()}
+  else if(e.key==='ArrowRight')a.currentTime+=5;
+  else if(e.key==='ArrowLeft')a.currentTime-=5;
+  else if(e.key==='n'||e.key==='N')step(1);
+  else if(e.key==='p'||e.key==='P')step(-1);
+});
+addEventListener('dragover',e=>{e.preventDefault();document.body.classList.add('drag')});
+addEventListener('dragleave',e=>{if(!e.relatedTarget)document.body.classList.remove('drag')});
+addEventListener('drop',e=>{e.preventDefault();document.body.classList.remove('drag');add(e.dataTransfer.files)});
+
+const cv=$('cv'),cx=cv.getContext('2d');
+function draw(){
+  const r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;
+  if(cv.width!==Math.round(r.width*dpr)){cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr)}
+  const W=cv.width,H=cv.height,cs=getComputedStyle(document.documentElement);
+  cx.clearRect(0,0,W,H);
+  const n=48,g=3*dpr,bw=(W-g*(n+1))/n,live=an&&!a.paused;
+  if(live)an.getByteFrequencyData(buf);
+  for(let k=0;k<n;k++){
+    const v=live?buf[k]/255:0,h=Math.max(2*dpr,v*(H-12*dpr));
+    cx.fillStyle=cs.getPropertyValue(live?'--accent':'--line');
+    cx.fillRect(g+k*(bw+g),H-6*dpr-h,bw,h);
+  }
+  requestAnimationFrame(draw);
+}
+$('imgf').onchange=e=>{const f=e.target.files[0];if(f&&pk)setImg(pk,f);e.target.value=''};
+const dk=document.querySelector('.deck');
+document.querySelector('.now').onclick=()=>dk.classList.toggle('open');
+a.addEventListener('timeupdate',()=>dk.style.setProperty('--p',(isFinite(a.duration)?a.currentTime/a.duration*100:0)+'%'));
+const nav=()=>{$('nHome').classList.toggle('on',view.l!==4);$('nLib').classList.toggle('on',view.l===4)};
+$('nHome').onclick=()=>{view={l:0};clr();nav()};
+$('nSearch').onclick=()=>{scrollTo(0,0);$('q').focus()};
+$('nLib').onclick=()=>{view={l:4};clr();nav()};
+$('back').addEventListener('click',nav);
+render();draw();
+/* ---- riproduzione nativa ---- */
+var tried={},synced=0,nat={};
+function put(){if(!synced){synced=1;sync()}}
+function add(){Android.add()}
+function go(){}
+function step(){}
+function b64blob(b){return new Blob([Uint8Array.from(atob(b),c=>c.charCodeAt(0))])}
+function toJpg(blob){return createImageBitmap(blob).then(im=>{const s=Math.min(1,512/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85).split(',')[1]})}
+var _si=setImg;
+setImg=function(k,blob){_si(k,blob);if(k.indexOf('al-')===0){const d=DISC[+k.slice(3)];toJpg(blob).then(b=>Android.setArt(d.ar,d.t,b)).catch(()=>{})}};
+function show(t){const al=t&&t.ai!=null?DISC[t.ai]:null;$('title').textContent=t?t.name:'Nessun brano';$('sub').textContent=!t?'Carica i tuoi file audio':al?al.ar+' · '+al.t+(al.y?' · '+al.y:''):'File locale'}
+function sync(){
+  const L=JSON.parse(Android.library()),cur=nat.id||(T[i]?T[i].id:''),meta=[],arts=[];
+  T.length=0;
+  L.forEach(r=>{
+    const t={id:r.id,name:r.name.replace(/\.[^.]+$/,'').replace(/mp3j\.cc/i,''),dur:r.dur?r.dur/1000:NaN,ai:null,ti:null};
+    const m=match(t.name);
+    if(m&&!T.some(x=>x.ai===m[1]&&x.ti===m[2])){
+      t.ai=m[1];t.ti=m[2];t.name=DISC[m[1]].tr[m[2]][0];
+      meta.push({id:t.id,title:t.name,artist:DISC[m[1]].ar,album:DISC[m[1]].t,no:m[2]+1});
+      const ck='al-'+m[1];if(!IMG[ck]&&!tried[ck]){tried[ck]=1;arts.push([ck,t.id])}
+    }else meta.push({id:t.id,title:t.name,artist:'',album:'',no:0});
+    T.push(t);
+  });
+  T.sort((x,y)=>(x.ai??999)-(y.ai??999)||(x.ti??0)-(y.ti??0));
+  i=T.findIndex(t=>t.id===cur);
+  Android.setMeta(JSON.stringify(meta));
+  show(T[i]);render();
+  arts.forEach(a=>{try{const b=Android.art(a[1]);if(b)setImg(a[0],b64blob(b))}catch(e){}});
+}
+function load(k,play){i=k;show(T[k]);render();if(play)Android.play(JSON.stringify(T.map(x=>x.id)),k)}
+function del(k){Android.remove(T[k].id);sync()}
+window.onLibrary=sync;
+window.onNative=function(s){
+  nat=s;const k=T.findIndex(t=>t.id===s.id);
+  if(k!==i){i=k;show(T[k]);render()}
+  $('pi').setAttribute('d',s.playing?'M6 4h4v16H6zM14 4h4v16h-4z':'M7 4v16l13-8z');
+  if(!seeking){$('cur').textContent=fmt(s.pos/1000);$('seek').value=s.dur?s.pos/s.dur*1000:0}
+  $('dur').textContent=fmt(s.dur/1000);dk.style.setProperty('--p',(s.dur?s.pos/s.dur*100:0)+'%');
+};
+$('addBtn').onclick=()=>Android.add();
+$('play').onclick=()=>{if(nat.id)Android.toggle();else if(T.length)load(Math.max(i,0),true)};
+$('next').onclick=()=>Android.next();
+$('prev').onclick=()=>Android.prev();
+$('shuf').onclick=e=>{shuf=!shuf;e.currentTarget.setAttribute('aria-pressed',shuf);Android.shuffle(shuf)};
+$('rep').onclick=e=>{rep=rep==='off'?'all':rep==='all'?'one':'off';const b=e.currentTarget;b.dataset.m=rep;b.setAttribute('aria-pressed',rep!=='off');Android.repeat(rep==='off'?0:rep==='one'?1:2)};
+$('seek').oninput=()=>{seeking=true};
+$('seek').onchange=()=>{if(nat.dur)Android.seek(nat.dur*$('seek').value/1000);seeking=false};
+setTimeout(()=>{if(!synced){synced=1;sync()}},1500);
+</script>
+
+</html>
