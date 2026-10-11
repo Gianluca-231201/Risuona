@@ -152,14 +152,22 @@ class MainActivity : Activity() {
         val f = File(Lib.dir(this), "$id.$ext")
         contentResolver.openInputStream(u)!!.use { i -> f.outputStream().use { o -> i.copyTo(o) } }
         var dur = 0L
+        var ta = ""
+        var tal = ""
+        var tt = ""
+        var tn = 0
         try {
             val r = MediaMetadataRetriever()
             r.setDataSource(f.path)
             dur = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            ta = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: ""
+            tal = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM) ?: ""
+            tt = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: ""
+            tn = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)?.substringBefore('/')?.trim()?.toIntOrNull() ?: 0
             r.release()
         } catch (e: Exception) {
         }
-        Lib.add(this, Lib.Tr(id, f.name, name, "", "", "", 0, dur))
+        Lib.add(this, Lib.Tr(id, f.name, name, "", "", "", 0, dur, ta, tal, tt, tn))
     }
 
     inner class Bridge {

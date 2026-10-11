@@ -9,7 +9,7 @@ import org.json.JSONObject
 import java.io.File
 
 object Lib {
-    class Tr(val id: String, val file: String, var name: String, var title: String, var artist: String, var album: String, var no: Int, var dur: Long)
+    class Tr(val id: String, val file: String, var name: String, var title: String, var artist: String, var album: String, var no: Int, var dur: Long, val ta: String = "", val tal: String = "", val tt: String = "", val tn: Int = 0)
 
     private var cache: MutableList<Tr>? = null
 
@@ -26,7 +26,7 @@ object Lib {
             val a = JSONArray(f.readText())
             for (i in 0 until a.length()) {
                 val o = a.getJSONObject(i)
-                l.add(Tr(o.getString("id"), o.getString("file"), o.optString("name"), o.optString("title"), o.optString("artist"), o.optString("album"), o.optInt("no"), o.optLong("dur")))
+                l.add(Tr(o.getString("id"), o.getString("file"), o.optString("name"), o.optString("title"), o.optString("artist"), o.optString("album"), o.optInt("no"), o.optLong("dur"), o.optString("ta"), o.optString("tal"), o.optString("tt"), o.optInt("tn")))
             }
         } catch (e: Exception) {
         }
@@ -37,7 +37,7 @@ object Lib {
     @Synchronized
     fun json(c: Context): String {
         val a = JSONArray()
-        for (t in all(c)) a.put(JSONObject().put("id", t.id).put("file", t.file).put("name", t.name).put("title", t.title).put("artist", t.artist).put("album", t.album).put("no", t.no).put("dur", t.dur))
+        for (t in all(c)) a.put(JSONObject().put("id", t.id).put("file", t.file).put("name", t.name).put("title", t.title).put("artist", t.artist).put("album", t.album).put("no", t.no).put("dur", t.dur).put("ta", t.ta).put("tal", t.tal).put("tt", t.tt).put("tn", t.tn))
         return a.toString()
     }
 

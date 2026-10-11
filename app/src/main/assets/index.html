@@ -336,7 +336,7 @@ function render(){
   const orows=f=>oth.filter(x=>!f||f(x[0].name)).map((x,n)=>row(n+1,x[0].name,fmt(x[0].dur),x[1]));
   const ids=a=>DISC.map((_,ai)=>ai).filter(ai=>DISC[ai].ar===a);
   const akey=a=>a==='Ultimo'?'ar':'ar-'+a;
-  const acard=(ai,wa)=>card(DISC[ai].t,(wa===1?DISC[ai].ar+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+DISC[ai].tr.length,()=>{view={l:2,ai};clr()},'al-'+ai);
+  const acard=(ai,wa)=>card(DISC[ai].t,(wa===1?DISC[ai].ar+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+DISC[ai].tr.length,()=>{view={l:2,ai};clr()},akA(ai));
   const arcard=a=>{const x=ids(a);return card(a,x.length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+DISC[ai].tr.length,0),()=>{view={l:1,ar:a};clr()},akey(a))};
   const msg=s=>{const p=document.createElement('p');p.className='keys';p.textContent=s;l.appendChild(p)};
   let crumb='Artisti';
@@ -352,7 +352,7 @@ function render(){
   }else if(view.l===1){
     crumb=view.ar;pick(l,akey(view.ar),'Scegli foto artista');grid(l,ids(view.ar).map(ai=>acard(ai)));
   }else if(view.l===2){
-    const d=DISC[view.ai],r=trows(view.ai);crumb=d.ar;pick(l,'al-'+view.ai,'Scegli copertina');
+    const d=DISC[view.ai],r=trows(view.ai);crumb=d.ar;pick(l,akA(view.ai),'Scegli copertina');
     if(r.length)sect(l,d.t,d.y,have(view.ai)+'/'+d.tr.length,r);else msg('Nessun brano caricato per questo album.');
   }else if(view.l===4){
     crumb='Libreria';
@@ -463,22 +463,42 @@ function step(){}
 function b64blob(b){return new Blob([Uint8Array.from(atob(b),c=>c.charCodeAt(0))])}
 function toJpg(blob){return createImageBitmap(blob).then(im=>{const s=Math.min(1,512/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85).split(',')[1]})}
 var _si=setImg;
-setImg=function(k,blob){_si(k,blob);if(k.indexOf('al-')===0){const d=DISC[+k.slice(3)];toJpg(blob).then(b=>Android.setArt(d.ar,d.t,b)).catch(()=>{})}};
+setImg=function(k,blob){_si(k,blob);const d=DISC[KD[k]!=null?KD[k]:k.indexOf('al-')===0?+k.slice(3):-1];if(d){toJpg(blob).then(b=>Android.setArt(d.ar,d.t,b)).catch(()=>{})}};
 function show(t){const al=t&&t.ai!=null?DISC[t.ai]:null;$('title').textContent=t?t.name:'Nessun brano';$('sub').textContent=!t?'Carica i tuoi file audio':al?al.ar+' · '+al.t+(al.y?' · '+al.y:''):'File locale'}
+var NST=DISC.length,NAR=ARTS.length,KD={};
+function akA(ai){const d=DISC[ai];return d&&d.dyn?'ald-'+d.ar+'|'+d.t:'al-'+ai}
+function dynAlbum(ar,al){let ai=DISC.findIndex((d,x)=>x>=NST&&d.ar===ar&&d.t===al);if(ai<0){DISC.push({t:al,y:'',ar:ar,tr:[],dyn:1});ai=DISC.length-1;if(!ARTS.includes(ar))ARTS.push(ar)}return ai}
 function sync(){
   const L=JSON.parse(Android.library()),cur=nat.id||(T[i]?T[i].id:''),meta=[],arts=[];
-  T.length=0;
+  T.length=0;DISC.length=NST;ARTS.length=NAR;KD={};
+  const cat=ARTS.slice(),isCat=s=>{if(!s)return;const n=norm(s);return cat.find(a=>n.includes(norm(a)))};
   L.forEach(r=>{
-    const t={id:r.id,name:r.name.replace(/\.[^.]+$/,'').replace(/mp3j\.cc/i,''),dur:r.dur?r.dur/1000:NaN,ai:null,ti:null};
-    const m=match(t.name);
-    if(m&&!T.some(x=>x.ai===m[1]&&x.ti===m[2])){
-      t.ai=m[1];t.ti=m[2];t.name=DISC[m[1]].tr[m[2]][0];
-      meta.push({id:t.id,title:t.name,artist:DISC[m[1]].ar,album:DISC[m[1]].t,no:m[2]+1});
-      const ck='al-'+m[1];if(!IMG[ck]&&!tried[ck]){tried[ck]=1;arts.push([ck,t.id])}
-    }else meta.push({id:t.id,title:t.name,artist:'',album:'',no:0});
+    const raw=r.name.replace(/\.[^.]+$/,'').replace(/mp3j\.cc/i,'').replace(/_/g,' ').trim();
+    const t={id:r.id,name:raw,dur:r.dur?r.dur/1000:NaN,ai:null,ti:null};
+    const sp=raw.split(/\s+-\s+/),pre=sp.length>1&&!/^\d+$/.test(sp[0].trim())?sp[0].trim():'';
+    const tagAr=(r.ta||'').trim(),known=isCat(tagAr)||isCat(raw),foreign=!known&&(tagAr||pre);
+    let m=foreign?null:match(raw);
+    if(m&&T.some(x=>x.ai===m[1]&&x.ti===m[2]))m=null;
+    if(m){t.ai=m[1];t.ti=m[2];t.name=DISC[m[1]].tr[m[2]][0]}
+    else{
+      const ar=known||tagAr||pre;
+      if(ar){
+        const title=(r.tt||'').trim()||(sp.length>1?sp.slice(1).join(' - ').trim():'')||raw;
+        const ai=dynAlbum(ar,(r.tal||'').trim()||'Altri brani');
+        t.ai=ai;t.name=title;t.tn=r.tn||999;DISC[ai].tr.push([title,'',t]);
+      }
+    }
     T.push(t);
   });
-  T.sort((x,y)=>(x.ai??999)-(y.ai??999)||(x.ti??0)-(y.ti??0));
+  for(let ai=NST;ai<DISC.length;ai++){const d=DISC[ai];d.tr.sort((a,b)=>a[2].tn-b[2].tn||a[0].localeCompare(b[0]));d.tr.forEach((x,k)=>{x[2].ti=k;x.length=2})}
+  T.sort((x,y)=>(x.ai??9999)-(y.ai??9999)||(x.ti??0)-(y.ti??0));
+  T.forEach(t=>{
+    if(t.ai==null){meta.push({id:t.id,title:t.name,artist:'',album:'',no:0});return}
+    const d=DISC[t.ai],ck=akA(t.ai);KD[ck]=t.ai;
+    meta.push({id:t.id,title:t.name,artist:d.ar,album:d.t,no:t.ti+1});
+    if(!IMG[ck]&&!tried[ck]){tried[ck]=1;arts.push([ck,t.id])}
+  });
+  if((view.l===2&&!DISC[view.ai])||(view.l===1&&!ARTS.includes(view.ar)))view={l:0};
   i=T.findIndex(t=>t.id===cur);
   Android.setMeta(JSON.stringify(meta));
   show(T[i]);render();
