@@ -139,6 +139,9 @@ li .pl{width:32px;height:32px;border-radius:50%;color:var(--muted);display:grid;
 li .pl svg{width:20px;height:20px;fill:currentColor}
 li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .plh{font:700 22px var(--display);margin:18px 0 0;padding:0 8px}
+[hidden]{display:none!important}
+#edit{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--accent);background:var(--well)}
+#edit svg{width:17px;height:17px;fill:currentColor}
 </style>
 <div class="wrap">
   <header>
@@ -151,7 +154,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 
 
   <section>
-    <h2><span class="bc"><button id="back" hidden>‹ Indietro</button><span id="crumb">Artisti</span></span><span id="count"></span></h2>
+    <h2><span class="bc"><button id="back" hidden>‹ Indietro</button><span id="crumb">Artisti</span><button id="edit" hidden title="Modifica" aria-label="Modifica"><svg viewBox="0 0 24 24"><path d="M3 17.2V21h3.8l11-11-3.8-3.8-11 11zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.8 3.8L20.7 7z"/></svg></button></span><span id="count"></span></h2>
     <button class="chip" id="only" aria-pressed="false">Solo brani caricati</button>
     <div id="list"></div>
     <div class="empty" id="empty"><b>Nessun file caricato</b>Premi “+” in alto e scegli i tuoi MP3: vengono abbinati ai brani della discografia.</div>
@@ -185,6 +188,10 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 </div>
 <script>
 var PL=[];try{PL=JSON.parse(localStorage.getItem('rs_pl')||'[]')||[]}catch(e){}
+var REN={};try{REN=JSON.parse(localStorage.getItem('rs_ren')||'{}')||{}}catch(e){}
+function dn(a){return REN['ar|'+a]||a}
+function dal(d){return REN['al|'+d.ar+'|'+d.t]||d.t}
+function agk(a){return a==='Ultimo'?'ar':'ar-'+a}
 var HID={};try{HID=JSON.parse(localStorage.getItem('rs_hid')||'{}')||{}}catch(e){}
 function saveH(){try{localStorage.setItem('rs_hid',JSON.stringify(HID))}catch(e){}}
 function hk(ai,ti){const d=DISC[ai];return d.ar+'|'+d.t+'|'+d.tr[ti][0]}
@@ -353,24 +360,24 @@ function render(){
   const orows=f=>oth.filter(x=>!f||f(x[0].name)).map((x,n)=>row(n+1,x[0].name,fmt(x[0].dur),x[1]));
   const ids=a=>DISC.map((_,ai)=>ai).filter(ai=>DISC[ai].ar===a);
   const akey=a=>a==='Ultimo'?'ar':'ar-'+a;
-  const acard=(ai,wa)=>card(DISC[ai].t,(wa===1?DISC[ai].ar+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+cnt(ai),()=>{view={l:2,ai};clr()},akA(ai));
-  const arcard=a=>{const x=ids(a);return card(a,x.filter(vis).length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),()=>{view={l:1,ar:a};clr()},akey(a))};
+  const acard=(ai,wa)=>card(dal(DISC[ai]),(wa===1?dn(DISC[ai].ar)+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+cnt(ai),()=>{view={l:2,ai};clr()},akA(ai));
+  const arcard=a=>{const x=ids(a);return card(dn(a),x.filter(vis).length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),()=>{view={l:1,ar:a};clr()},akey(a))};
   const msg=s=>{const p=document.createElement('p');p.className='keys';p.textContent=s;l.appendChild(p)};
   let crumb='Artisti';
   if(q){
     crumb='Risultati';const n=norm(q).trim(),hit=s=>norm(s).includes(n);
     const c=ARTS.filter(hit).map(arcard).concat(DISC.map((_,ai)=>ai).filter(ai=>hit(DISC[ai].t)).map(ai=>acard(ai,1)));
     let any=c.length;if(any)grid(l,c);
-    DISC.forEach((d,ai)=>{const r=trows(ai,hit);if(r.length){any++;sect(l,d.t,d.ar,r.length,r)}});
+    DISC.forEach((d,ai)=>{const r=trows(ai,hit);if(r.length){any++;sect(l,dal(d),dn(d.ar),r.length,r)}});
     const o=orows(hit);if(o.length){any++;sect(l,'Altri file','',o.length,o)}
     if(!any)msg('Nessun risultato per “'+q+'”.');
   }else if(view.l===0){
     const c=ARTS.filter(a=>ids(a).some(vis)).map(arcard);if(oth.length)c.push(card('Altri file',oth.length+' brani',()=>{view={l:3};clr()}));grid(l,c);
   }else if(view.l===1){
-    crumb=view.ar;pick(l,akey(view.ar),'Scegli foto artista');grid(l,ids(view.ar).filter(vis).map(ai=>acard(ai)));
+    crumb=dn(view.ar);grid(l,ids(view.ar).filter(vis).map(ai=>acard(ai)));
   }else if(view.l===2){
-    const d=DISC[view.ai],r=trows(view.ai);crumb=d.ar;pick(l,akA(view.ai),'Scegli copertina');
-    if(r.length)sect(l,d.t,d.y,have(view.ai)+'/'+cnt(view.ai),r);else msg('Nessun brano caricato per questo album.');
+    const d=DISC[view.ai],r=trows(view.ai);crumb=dn(d.ar);
+    if(r.length)sect(l,dal(d),d.y,have(view.ai)+'/'+cnt(view.ai),r);else msg('Nessun brano caricato per questo album.');
   }else if(view.l===4){
     crumb='Libreria';libView(l);
   }else if(view.l===5){
@@ -378,7 +385,7 @@ function render(){
   }else{
     crumb='Altri file';const o=orows();if(o.length)sect(l,'Altri file','',o.length,o);else{view={l:0};return render()}
   }
-  $('crumb').textContent=crumb;$('back').hidden=!!q||view.l===0;
+  $('crumb').textContent=crumb;$('back').hidden=!!q||view.l===0;$('edit').hidden=!!q||(view.l!==1&&view.l!==2);
   $('empty').hidden=T.length>0;
   $('count').textContent=hv+'/'+tot+' brani';
   ['prev','next','play'].forEach(b=>$(b).disabled=!T.length);
@@ -395,7 +402,7 @@ function del(k){
 }
 function load(k,play){
   i=k;const t=T[k],al=t.ai!=null?DISC[t.ai]:null;a.src=t.url;$('title').textContent=t.name;
-  $('sub').textContent=al?al.ar+' · '+al.t+(al.y?' · '+al.y:''):'File locale';
+  $('sub').textContent=al?dn(al.ar)+' · '+dal(al)+(al.y?' · '+al.y:''):'File locale';
   if('mediaSession'in navigator)try{navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:al?al.ar:'',album:al?al.t:''})}catch(e){}
   render();if(play)go();
 }
@@ -481,9 +488,9 @@ function step(){}
 function b64blob(b){return new Blob([Uint8Array.from(atob(b),c=>c.charCodeAt(0))])}
 function toJpg(blob){return createImageBitmap(blob).then(im=>{const s=Math.min(1,512/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85).split(',')[1]})}
 var _si=setImg;
-function artT(k){if(k==='ar')return['Ultimo',''];if(k.indexOf('ar-')===0)return[k.slice(3),''];const d=DISC[KD[k]!=null?KD[k]:k.indexOf('al-')===0?+k.slice(3):-1];return d?[d.ar,d.t]:null}
+function artT(k){if(k==='ar')return[dn('Ultimo'),''];if(k.indexOf('ar-')===0)return[dn(k.slice(3)),''];const d=DISC[KD[k]!=null?KD[k]:k.indexOf('al-')===0?+k.slice(3):-1];return d?[dn(d.ar),dal(d)]:null}
 setImg=function(k,blob){_si(k,blob);const a=artT(k);if(a)toJpg(blob).then(b=>Android.setArt(a[0],a[1],b)).catch(()=>{})};
-function show(t){const al=t&&t.ai!=null?DISC[t.ai]:null;$('title').textContent=t?t.name:'Nessun brano';$('sub').textContent=!t?'Carica i tuoi file audio':al?al.ar+' · '+al.t+(al.y?' · '+al.y:''):'File locale'}
+function show(t){const al=t&&t.ai!=null?DISC[t.ai]:null;$('title').textContent=t?t.name:'Nessun brano';$('sub').textContent=!t?'Carica i tuoi file audio':al?dn(al.ar)+' · '+dal(al)+(al.y?' · '+al.y:''):'File locale'}
 var NST=DISC.length,NAR=ARTS.length,KD={};
 function akA(ai){const d=DISC[ai];return d&&d.dyn?'ald-'+d.ar+'|'+d.t:'al-'+ai}
 function dynAlbum(ar,al){let ai=DISC.findIndex((d,x)=>x>=NST&&d.ar===ar&&d.t===al);if(ai<0){DISC.push({t:al,y:'',ar:ar,tr:[],dyn:1});ai=DISC.length-1;if(!ARTS.includes(ar))ARTS.push(ar)}return ai}
@@ -514,7 +521,7 @@ function sync(){
   T.forEach(t=>{
     if(t.ai==null){meta.push({id:t.id,title:t.name,artist:'',album:'',no:0});return}
     const d=DISC[t.ai],ck=akA(t.ai);KD[ck]=t.ai;
-    meta.push({id:t.id,title:t.name,artist:d.ar,album:d.t,no:t.ti+1});
+    meta.push({id:t.id,title:t.name,artist:dn(d.ar),album:dal(d),no:t.ti+1});
     if(!IMG[ck]&&!tried[ck]){tried[ck]=1;arts.push([ck,t.id])}
   });
   if((view.l===2&&!DISC[view.ai])||(view.l===1&&!ARTS.includes(view.ar)))view={l:0};
@@ -617,6 +624,13 @@ function plView(l){
   return p.name;
 }
 $('back').onclick=()=>{view=view.l===2?{l:1,ar:DISC[view.ai].ar}:view.l===5?{l:4}:{l:0};render()};
+$('edit').onclick=()=>{
+  const isAl=view.l===2,d=isAl?DISC[view.ai]:null,ar=isAl?d.ar:view.ar,rk=isAl?'al|'+d.ar+'|'+d.t:'ar|'+ar,cur=isAl?dal(d):dn(ar),ik=isAl?akA(view.ai):agk(ar);
+  sheet(isAl?'Modifica album':'Modifica artista',[
+    ['Cambia foto',()=>{pk=ik;$('imgf').click()}],
+    ['Cambia nome',()=>sheet('Nuovo nome',[['Salva',v=>{if(!v)return;if(v===(isAl?d.t:ar))delete REN[rk];else REN[rk]=v;try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}if(isAl&&d.dyn)view={l:1,ar:ar};sync.done=0;sync()}],['Annulla']],'Nome',cur)],
+    ['Annulla']]);
+};
 </script>
 
 </html>
