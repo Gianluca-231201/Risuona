@@ -4,10 +4,14 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -40,6 +44,11 @@ class PlaybackService : MediaLibraryService() {
             .build()
         val pi = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         session = MediaLibrarySession.Builder(this, player, Cb()).setSessionActivity(pi).build()
+        player.addListener(object : Player.Listener {
+            override fun onEvents(p: Player, events: Player.Events) {
+                if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION, Player.EVENT_TIMELINE_CHANGED, Player.EVENT_IS_PLAYING_CHANGED)) saveState()
+            }
+        })
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession = session
@@ -54,7 +63,72 @@ class PlaybackService : MediaLibraryService() {
         super.onDestroy()
     }
 
+    private var lastAuto = 0L
+
+    private fun saveState() {
+        val n = player.mediaItemCount
+        if (n == 0) return
+        val sb = StringBuilder()
+        for (k in 0 until n) {
+            if (k > 0) sb.append('\n')
+            sb.append(player.getMediaItemAt(k).mediaId)
+        }
+        getSharedPreferences("st", MODE_PRIVATE).edit()
+            .putString("ids", sb.toString())
+            .putInt("idx", player.currentMediaItemIndex)
+            .putLong("pos", player.currentPosition)
+            .apply()
+    }
+
+    private fun resume(): MediaSession.MediaItemsWithStartPosition? {
+        val sp = getSharedPreferences("st", MODE_PRIVATE)
+        var l = (sp.getString("ids", "") ?: "").split('\n').filter { it.isNotEmpty() }.mapNotNull { Lib.track(this, it) }
+        var idx = sp.getInt("idx", 0)
+        var pos = sp.getLong("pos", 0L)
+        if (l.isEmpty()) {
+            l = Lib.children(this, "all")
+            idx = 0
+            pos = 0L
+        }
+        if (l.isEmpty()) return null
+        if (idx !in l.indices) {
+            idx = 0
+            pos = 0L
+        }
+        return MediaSession.MediaItemsWithStartPosition(l, idx, pos)
+    }
+
+    private fun autoStart() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastAuto < 10000) return
+        lastAuto = now
+        Handler(Looper.getMainLooper()).postDelayed({
+            try {
+                if (!player.isPlaying) {
+                    if (player.mediaItemCount == 0) {
+                        val r = resume()
+                        if (r != null) {
+                            player.setMediaItems(r.mediaItems, r.startIndex, r.startPositionMs)
+                            player.prepare()
+                        }
+                    }
+                    if (player.mediaItemCount > 0) player.play()
+                }
+            } catch (e: Exception) {
+            }
+        }, 1000)
+    }
+
     private inner class Cb : MediaLibrarySession.Callback {
+        override fun onPostConnect(session: MediaSession, controller: MediaSession.ControllerInfo) {
+            if (session.isAutoCompanionController(controller) || session.isAutomotiveController(controller)) autoStart()
+        }
+
+        override fun onPlaybackResumption(mediaSession: MediaSession, controller: MediaSession.ControllerInfo): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            val r = resume()
+            return if (r != null) Futures.immediateFuture(r) else Futures.immediateFailedFuture(UnsupportedOperationException())
+        }
+
         override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> =
             Futures.immediateFuture(LibraryResult.ofItem(Lib.folder("root", "Risuona"), LibraryParams.Builder().setExtras(Bundle().apply {
                 putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED", true)
