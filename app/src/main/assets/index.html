@@ -366,7 +366,7 @@ function render(){
   let crumb='Artisti';
   if(q){
     crumb='Risultati';const n=norm(q).trim(),hit=s=>norm(s).includes(n);
-    const c=ARTS.filter(hit).map(arcard).concat(DISC.map((_,ai)=>ai).filter(ai=>hit(DISC[ai].t)).map(ai=>acard(ai,1)));
+    const c=ARTS.filter(a=>hit(dn(a))).map(arcard).concat(DISC.map((_,ai)=>ai).filter(ai=>hit(dal(DISC[ai]))).map(ai=>acard(ai,1)));
     let any=c.length;if(any)grid(l,c);
     DISC.forEach((d,ai)=>{const r=trows(ai,hit);if(r.length){any++;sect(l,dal(d),dn(d.ar),r.length,r)}});
     const o=orows(hit);if(o.length){any++;sect(l,'Altri file','',o.length,o)}
