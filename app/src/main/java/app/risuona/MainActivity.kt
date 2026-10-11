@@ -40,6 +40,26 @@ class MainActivity : Activity() {
             h.postDelayed(this, 500)
         }
     }
+    private var vizOn = false
+    private val vizTick = object : Runnable {
+        override fun run() {
+            val live = ctl?.isPlaying == true && android.os.SystemClock.elapsedRealtime() - Viz.stamp < 400
+            if (live) {
+                val b = Viz.bands
+                val sb = StringBuilder("window.onViz&&onViz([")
+                for (k in b.indices) {
+                    if (k > 0) sb.append(',')
+                    sb.append((b[k] * 100).toInt() / 100f)
+                }
+                web.evaluateJavascript(sb.append("])").toString(), null)
+                vizOn = true
+            } else if (vizOn) {
+                vizOn = false
+                web.evaluateJavascript("window.onViz&&onViz([])", null)
+            }
+            h.postDelayed(this, 50)
+        }
+    }
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
             push()
@@ -86,10 +106,12 @@ class MainActivity : Activity() {
             }
         }, MoreExecutors.directExecutor())
         h.post(tick)
+        h.post(vizTick)
     }
 
     override fun onStop() {
         h.removeCallbacks(tick)
+        h.removeCallbacks(vizTick)
         ctl?.removeListener(listener)
         ctl = null
         fut?.let { MediaController.releaseFuture(it) }

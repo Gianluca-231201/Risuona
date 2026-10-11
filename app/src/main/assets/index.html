@@ -127,7 +127,9 @@ li{border-bottom:0}
 .nav button{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font:500 12px var(--body);min-width:72px}
 .nav svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .nav .on{color:var(--accent)}
-.vol,canvas{display:none!important}
+.vol{display:none!important}
+.deck canvas{display:block;grid-column:1/-1;height:40px;background:transparent;border-radius:6px}
+.deck.open canvas{height:120px}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:min(520px,100%);border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px}
 .sheet h4{margin:0 0 6px;font:500 17px/1.3 var(--display);overflow-wrap:anywhere}
@@ -637,6 +639,21 @@ function lpc(b,fn){lp(b,fn);return b}
 function renS(rk,orig,cur,after){sheet('Nuovo nome',[['Salva',v=>{if(!v)return;if(v===orig)delete REN[rk];else REN[rk]=v;try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}if(after)after();sync.done=0;sync()}],['Annulla']],'Nome',cur)}
 function editAr(ar){sheet(dn(ar),[['Cambia foto',()=>{pk=agk(ar);$('imgf').click()}],['Cambia nome',()=>renS('ar|'+ar,ar,dn(ar))],['Annulla']])}
 function editAl(ai){const d=DISC[ai];if(!d)return;sheet(dal(d),[['Cambia foto',()=>{pk=akA(ai);$('imgf').click()}],['Cambia nome',()=>renS('al|'+d.ar+'|'+d.t,d.t,dal(d),()=>{if(d.dyn&&view.l===2)view={l:1,ar:d.ar}})],['Annulla']])}
+var VZ=[],VC=[];
+window.onViz=function(a){VZ=a};
+function draw(){
+  const r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;
+  if(r.width&&cv.width!==Math.round(r.width*dpr)||cv.height!==Math.round(r.height*dpr)){cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr)}
+  const W=cv.width,H=cv.height,cs=getComputedStyle(document.documentElement),n=32,g=3*dpr,bw=(W-g*(n+1))/n,on=!!(window.nat&&nat.playing);
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle=cs.getPropertyValue(on?'--accent':'--line');
+  for(let k=0;k<n;k++){
+    const t=on?(VZ[k]||0):0;VC[k]=(VC[k]||0)+(t-(VC[k]||0))*(t>(VC[k]||0)?.55:.18);
+    const h=Math.max(2*dpr,VC[k]*(H-4*dpr));
+    cx.fillRect(g+k*(bw+g),H-2*dpr-h,bw,h);
+  }
+  requestAnimationFrame(draw);
+}
 </script>
 
 </html>
