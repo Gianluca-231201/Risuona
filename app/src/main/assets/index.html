@@ -146,6 +146,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #edit svg{width:17px;height:17px;fill:currentColor}
 .mix{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:14px;padding:14px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:500 16px var(--display)}
 .mix svg{width:20px;height:20px;fill:currentColor}
+.st{color:#ffc83d;margin-left:6px;font-size:13px}
 </style>
 <div class="wrap">
   <header>
@@ -193,6 +194,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 <script>
 var PL=[];try{PL=JSON.parse(localStorage.getItem('rs_pl')||'[]')||[]}catch(e){}
 var VZ=[],VC=[];
+var STAR={};try{STAR=JSON.parse(localStorage.getItem('rs_star')||'{}')||{}}catch(e){}
 var REN={};try{REN=JSON.parse(localStorage.getItem('rs_ren')||'{}')||{}}catch(e){}
 function dn(a){return REN['ar|'+a]||a}
 function dal(d){return REN['al|'+d.ar+'|'+d.t]||d.t}
@@ -603,7 +605,7 @@ function plMenu(p){sheet(p.name,[
 function trackMenu(k){
   const t=T[k];if(!t)return;const it=[],p=view.l===5&&!q?PL.find(x=>x.id===view.pid):null;
   if(p)it.push(['Rimuovi dalla playlist',()=>{p.ids=p.ids.filter(x=>x!==t.id);saveP();render()}]);
-  it.push(['Aggiungi a playlist',()=>addTo(t)]);
+  it.push(['Aggiungi a playlist',()=>addTo(t)]);if(t.ai!=null)it.push(starItem(t.ai,t.ti));
   it.push(['Elimina brano',()=>confirmS('Eliminare "'+t.name+'" dall\'app?','Elimina',()=>{const x=T.findIndex(z=>z.id===t.id);if(x>=0)del(x)}),1]);
   it.push(['Annulla']);sheet(t.name,it);
 }
@@ -614,6 +616,7 @@ function row(n,name,d,k){
   li.children[1].textContent=name;
   if(k==null){li.className='miss';return li}
   li.tabIndex=0;if(k===i)li.className='on';
+  if(T[k].ai!=null&&isStar(T[k].ai,T[k].ti))addStar(li);
   const b=document.createElement('button');b.className='pl';b.title='Aggiungi a playlist';b.setAttribute('aria-label','Aggiungi a playlist');
   b.innerHTML='<svg viewBox="0 0 24 24"><path d="M3 6h12v2H3zm0 5h12v2H3zm0 5h8v2H3zm15-5V8h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>';
   b.onclick=e=>{e.stopPropagation();addTo(T[k])};li.replaceChild(b,li.lastChild);
@@ -622,7 +625,8 @@ function row(n,name,d,k){
   return li;
 }
 function mrow(ai,ti,li,k){
-  if(k==null){const n=DISC[ai].tr[ti][0];lp(li,()=>sheet(n,[['Elimina dall\'elenco',()=>confirmS('Eliminare "'+n+'" dall\'elenco?','Elimina',()=>{HID[hk(ai,ti)]=1;saveH();render()}),1],['Annulla']]))}
+  if(k==null&&isStar(ai,ti))addStar(li);
+  if(k==null){const n=DISC[ai].tr[ti][0];lp(li,()=>sheet(n,[starItem(ai,ti),['Elimina dall\'elenco',()=>confirmS('Eliminare "'+n+'" dall\'elenco?','Elimina',()=>{HID[hk(ai,ti)]=1;saveH();render()}),1],['Annulla']]))}
   return li;
 }
 function del(k){const id=T[k].id;PL.forEach(p=>{p.ids=p.ids.filter(x=>x!==id)});saveP();Android.remove(id);sync()}
@@ -672,15 +676,15 @@ function draw(){
 }
 function mixBtn(l){
   const b=document.createElement('button');b.className='mix';
-  b.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.3 3.1-1.3-1.7L13.4 6H17V3zM3 6h4.6l8 12H17v-3l4 4-4 4v-3h-2.6l-8-12H3V6zm0 12h3.4l2.2-3.3 1.2 1.8L7.6 20H3v-2z"/></svg><span>Riproduzione casuale</span>';
-  b.onclick=()=>{if(!T.length)return;shuf=true;$('shuf').setAttribute('aria-pressed',true);Android.shuffle(true);load(Math.floor(Math.random()*T.length),true)};
+  b.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.3 3.1-1.3-1.7L13.4 6H17V3zM3 6h4.6l8 12H17v-3l4 4-4 4v-3h-2.6l-8-12H3V6zm0 12h3.4l2.2-3.3 1.2 1.8L7.6 20H3v-2z"/></svg><span>Riproduzione casuale ★</span>';
+  b.onclick=playMix;
   l.appendChild(b);
 }
 function doBackup(){
   toast('Preparo il backup…');
   Promise.all(Object.keys(IMG).map(k=>fetch(IMG[k]).then(r=>r.blob()).then(toJpg).then(b=>[k,b]).catch(()=>null))).then(a=>{
     const img={};a.forEach(x=>{if(x)img[x[0]]=x[1]});
-    Android.backup(JSON.stringify({pl:PL,ren:REN,hid:HID,img:img}));
+    Android.backup(JSON.stringify({pl:PL,ren:REN,hid:HID,star:STAR,img:img}));
   });
 }
 window.onRestore=function(web){
@@ -689,10 +693,50 @@ window.onRestore=function(web){
     (w.pl||[]).forEach(p=>{if(p&&p.id&&!PL.some(x=>x.id===p.id))PL.push(p)});saveP();
     Object.keys(w.ren||{}).forEach(k=>{if(!(k in REN))REN[k]=w.ren[k]});try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}
     Object.keys(w.hid||{}).forEach(k=>{HID[k]=1});saveH();
+    Object.keys(w.star||{}).forEach(k=>{if(!(k in STAR))STAR[k]=w.star[k]});saveS();
     Object.keys(w.img||{}).forEach(k=>{if(!IMG[k]){tried[k]=1;try{_si(k,b64blob(w.img[k]))}catch(e){}}});
     sync.done=0;sync();toast('Backup ripristinato');
   }catch(e){toast('File di backup non valido')}
 };
+function saveS(){try{localStorage.setItem('rs_star',JSON.stringify(STAR))}catch(e){}}
+function popSet(){
+  if(popSet.s)return popSet.s;
+  const P={
+  "Ultimo":"Pianeti;Sogni appesi;Giusy;Il ballo delle incertezze;Poesia senza veli;Cascare nei tuoi occhi;Ti dedico il silenzio;La stella più fragile dell'universo;I tuoi particolari;Piccola stella;Rondini al guinzaglio;Fateme cantà;Quando fuori piove;Ipocondria;Tutto questo sei tu;22 settembre;Niente;Buongiorno vita;Quel filo che ci unisce;Vieni nel mio cuore;Ti va di stare bene;Alba;Altrove;Occhi lucidi;Bella davvero;Tutto",
+  "Rocco Hunt":"Nu juorno buono;Tutto resta;Vene e vvà;Se mi chiami;Ti volevo dedicare;Benvenuti in Italy;Nisciun';Stu core t'apparten;A un passo dalla Luna;Un bacio all'improvviso;Fantastica;Caffelatte;Sultant' a mia",
+  "Vasco Rossi":"Albachiara;Jenny è pazza;Colpa d'Alfredo;Anima fragile;Siamo solo noi;Vado al massimo;Ogni volta;Splendida giornata;Bollicine;Una canzone per te;Vita spericolata;Toffee;C'è chi dice no;Vivere una favola;Ridere di te;Brava Giulia;Liberi...liberi;Gli spari sopra (Celebrate);Vivere;Gabri;...Stupendo;Delusa;Gli angeli;Sally;Io no....;Quanti anni hai;Rewind;Siamo soli;Ti prendo e ti porto via;Stupido hotel;Buoni o cattivi;Come stai;Un senso;E…;Il mondo che vorrei;Eh... già;Vivere o niente;Dannate nuvole;Come vorrei;Siamo qui;Una canzone d'amore buttata via",
+  "Francesca Michielin":"Distratto;Sola;L'amore esiste;Battito di ciglia;Lontano;Vulcano;Io non abito al mare;Bolivia;Tropicale;Cheyenne;Monolocale;Stato di natura;Quello che ancora non c'è;Bonsoir",
+  "Mr. Rain":"Carillon;I grandi non piangono mai;Ipernova;Fiori di Chernobyl;9.3;Meteoriti;A forma di origami;Non c'è più musica;Crisalidi;Neve su Marte;Sincero;Supereroi;Due altalene;La fine del mondo;Paura del buio",
+  "Imagine Dragons":"Radioactive;Demons;It's Time;On Top of the World;I Bet My Life;Shots;Gold;Believer;Thunder;Whatever It Takes;Walking the Wire;Natural;Bad Liar;Zero;Machine;Follow You;Wrecked;Bones;Sharks;Eyes Closed;Nice to Meet You;Take Me to the Beach",
+  "Emma":"Con le nuvole;Cullami;Sarò libera;Cercavo amore;Amami;Dimentico tutto;L'amore non mi basta;La mia felicità;Trattengo il fiato;Occhi profondi;Arriverà l'amore;Io di te non ho paura;Il paradiso non esiste;L'isola;Mi parli piano;Effetto domino;Mezzo mondo;Iniziamo dalla fine;Amore cane;Taxi sulla Luna",
+  "Annalisa":"Diamante lei e luce lui;Senza riserva;Scintille;Alice e il blu;Vincerò;Una finestra tra le stelle;Se avessi un cuore;Il diluvio universale;Il mondo prima di te;Bye Bye;Direzione la vita;Un domani;Tsunami;Houseparty;Romantica;Bellissima;Mon Amour;Ragazza sola;Euforia;Stelle;Indaco violento;Maschio;Piazza San Marco;Esibizionista",
+  "Olly":"Polvere;L'anima balla;Menomale che c'è il mare;Bianca;Fammi morire;Un'altra volta;Devastante;Per due come noi;A squarciagola;Quei ricordi là;Scarabocchi;Il campione;Noi che;È festa;La lavatrice si è rotta",
+  "Alfa":"Cin cin;Wanderlust!;Il giro del mondo;Testa tra le nuvole, Pt. 1;Sul più bello;San Lorenzo;Snob;Bevo tutta la notte;Vai!;Vabbè ciao;Il mio colore preferito;Nei tuoi occhi cosa c'è",
+  "Pinguini Tattici Nucleari":"Irene;Tetris;Verdura;Sashimi;Antartide;Lake Washington Boulevard;Fuori dall'hype;Scatole;Scooby Doo;Scrivile scemo;Pastello bianco;La storia infinita;Giulia;Bohémien;Giovani Wannabe;Ricordi;Dentista Croazia;Hold on;Zen;Hikikomori;Fede;L'ultima volta;Romantico ma muori;Islanda;Bottiglie vuote;Nativi digitali;Migliore",
+  "Angelina Mango":"La noia;Che t'o dico a fa';Ci pensiamo domani;Voglia di vivere;Mani vuote;Melodrama;Uguale a me;Fila indiana;Smile;Gioielli di famiglia;Crush;Ioeio;Pacco fragile",
+  "Marco Mengoni":"Dove si vola;Credimi ancora;In un giorno qualunque;Solo (Vuelta al ruedo);Tanto il resto cambia;Dall'inferno;L'essenziale;Pronto a correre;Non passerai;Bellissimo;La valle dei re;Guerriero;Esseri umani;Io ti aspetto;Ti ho voluto bene veramente;Parole in circolo;Ricorderai l'amore;Solo due satelliti;Hola (I Say);Voglio;Muhammad Ali;Buona vita;Ma stasera;Cambia un uomo;Mi fiderò;Luce;No Stress;Tutti i miei ricordi;Due vite;Pazza musica;Un'altra storia"
+  };
+  const s={},st=t=>t.replace(/\(.*?\)/g,'');
+  Object.keys(P).forEach(a=>P[a].split(';').forEach(t=>{s[norm(a)+norm(t)]=1;if(norm(st(t)).trim())s[norm(a)+norm(st(t))]=1}));
+  return popSet.s=s;
+}
+function isStar(ai,ti){
+  const d=DISC[ai];if(!d||!d.tr[ti])return false;
+  const u=STAR[hk(ai,ti)];if(u!=null)return !!u;
+  if(d.t==='Più popolari')return true;if(d.dyn)return false;
+  const t=d.tr[ti][0],s=popSet();
+  return !!(s[norm(d.ar)+norm(t)]||s[norm(d.ar)+norm(t.replace(/\(.*?\)/g,''))]);
+}
+function addStar(li){const y=document.createElement('span');y.className='st';y.textContent='★';li.children[1].appendChild(y)}
+function starItem(ai,ti){const on=isStar(ai,ti),k=hk(ai,ti);return[on?'Togli stella ★':'Aggiungi stella ★',()=>{STAR[k]=on?0:1;saveS();render()}]}
+function playMix(){
+  if(!T.length)return;
+  let pool=T.map((t,k)=>k).filter(k=>T[k].ai!=null&&isStar(T[k].ai,T[k].ti));
+  if(!pool.length){pool=T.map((t,k)=>k);toast('Nessun brano con la stella: riproduco tutti')}
+  const ids=pool.map(k=>T[k].id),s=Math.floor(Math.random()*ids.length);
+  shuf=true;$('shuf').setAttribute('aria-pressed',true);Android.shuffle(true);
+  i=pool[s];show(T[i]);render();Android.play(JSON.stringify(ids),s);
+}
 </script>
 
 </html>
