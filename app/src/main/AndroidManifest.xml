@@ -8,7 +8,7 @@
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="Risuona"
-        android:theme="@android:style/Theme.Black.NoTitleBar">
+        android:theme="@style/App">
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />

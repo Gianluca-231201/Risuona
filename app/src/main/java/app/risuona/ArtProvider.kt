@@ -28,7 +28,7 @@ class ArtProvider : ContentProvider() {
         var f = Lib.artFile(c, a, b)
         if (!f.exists()) {
             val h = ("$a|$b").hashCode()
-            f = File(c.cacheDir, "g$h.png")
+            f = File(c.cacheDir, "b$h.png")
             if (!f.exists()) grad(f, h)
         }
         return ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY)
@@ -36,11 +36,13 @@ class ArtProvider : ContentProvider() {
 
     private fun grad(f: File, h: Int) {
         val bmp = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
-        val hue = ((h % 360) + 360) % 360
+        val k = ((h % 1000) + 1000) % 1000
+        val hue = 205 + k % 34
+        val sat = if (k % 4 == 1) 0.12f else 0.85f
         val p = Paint()
         p.shader = LinearGradient(0f, 0f, 256f, 256f,
-            Color.HSVToColor(floatArrayOf(hue.toFloat(), 0.75f, 0.8f)),
-            Color.HSVToColor(floatArrayOf(((hue + 80) % 360).toFloat(), 0.75f, 0.8f)),
+            Color.HSVToColor(floatArrayOf(hue.toFloat(), sat, 0.95f)),
+            Color.HSVToColor(floatArrayOf((hue + 12).toFloat(), sat, 0.45f)),
             Shader.TileMode.CLAMP)
         Canvas(bmp).drawRect(0f, 0f, 256f, 256f, p)
         f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
