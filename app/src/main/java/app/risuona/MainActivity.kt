@@ -130,19 +130,22 @@ class MainActivity : Activity() {
         }
         if (requestCode == 2 && uris.isNotEmpty()) {
             Thread {
+                var dup = 0
                 for (u in uris) {
                     try {
-                        importOne(u)
+                        if (!importOne(u)) dup++
                     } catch (e: Exception) {
                     }
                 }
                 Lib.save(this)
-                runOnUiThread { web.evaluateJavascript("window.onLibrary&&onLibrary()", null) }
+                val msg = if (dup == 1) "1 brano era già presente" else "$dup brani erano già presenti"
+                val js = "window.onLibrary&&onLibrary();" + if (dup > 0) "window.toast&&toast('$msg');" else ""
+                runOnUiThread { web.evaluateJavascript(js, null) }
             }.start()
         }
     }
 
-    private fun importOne(u: Uri) {
+    private fun importOne(u: Uri): Boolean {
         var name = "brano"
         contentResolver.query(u, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
             if (it.moveToFirst()) name = it.getString(0) ?: name
@@ -167,7 +170,14 @@ class MainActivity : Activity() {
             r.release()
         } catch (e: Exception) {
         }
+        val len = f.length()
+        val same = Lib.snapshot(this).any { File(Lib.dir(this), it.file).length() == len && (it.name == name || (dur > 0L && it.dur == dur)) }
+        if (same) {
+            f.delete()
+            return false
+        }
         Lib.add(this, Lib.Tr(id, f.name, name, "", "", "", 0, dur, ta, tal, tt, tn))
+        return true
     }
 
     inner class Bridge {
