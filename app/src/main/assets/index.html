@@ -621,6 +621,8 @@ function libView(l){
   if(T.length)sect(l,'Brani caricati','',T.length,T.map((t,k)=>row(k+1,t.name,fmt(t.dur),k)));
   else pmsg(l,'Nessun brano caricato. Premi + per aggiungere i tuoi file.');
   const hn=Object.keys(HID).length;if(hn)chip(l,'Ripristina brani eliminati dall\'elenco ('+hn+')',()=>{HID={};saveH();render()});
+  const bh=document.createElement('h3');bh.className='plh';bh.textContent='Backup';l.appendChild(bh);
+  chip(l,'Salva backup',doBackup);chip(l,'Ripristina backup',()=>Android.restore());
 }
 function plView(l){
   const p=PL.find(x=>x.id===view.pid);
@@ -662,6 +664,23 @@ function mixBtn(l){
   b.onclick=()=>{if(!T.length)return;shuf=true;$('shuf').setAttribute('aria-pressed',true);Android.shuffle(true);load(Math.floor(Math.random()*T.length),true)};
   l.appendChild(b);
 }
+function doBackup(){
+  toast('Preparo il backup…');
+  Promise.all(Object.keys(IMG).map(k=>fetch(IMG[k]).then(r=>r.blob()).then(toJpg).then(b=>[k,b]).catch(()=>null))).then(a=>{
+    const img={};a.forEach(x=>{if(x)img[x[0]]=x[1]});
+    Android.backup(JSON.stringify({pl:PL,ren:REN,hid:HID,img:img}));
+  });
+}
+window.onRestore=function(web){
+  try{
+    const w=JSON.parse(web||'{}');
+    (w.pl||[]).forEach(p=>{if(p&&p.id&&!PL.some(x=>x.id===p.id))PL.push(p)});saveP();
+    Object.keys(w.ren||{}).forEach(k=>{if(!(k in REN))REN[k]=w.ren[k]});try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}
+    Object.keys(w.hid||{}).forEach(k=>{HID[k]=1});saveH();
+    Object.keys(w.img||{}).forEach(k=>{if(!IMG[k]){tried[k]=1;try{_si(k,b64blob(w.img[k]))}catch(e){}}});
+    sync.done=0;sync();toast('Backup ripristinato');
+  }catch(e){toast('File di backup non valido')}
+};
 </script>
 
 </html>

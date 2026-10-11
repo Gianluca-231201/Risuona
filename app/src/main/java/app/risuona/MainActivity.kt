@@ -26,7 +26,12 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 class MainActivity : Activity() {
     private lateinit var web: WebView
@@ -137,6 +142,30 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        val one = if (resultCode == RESULT_OK) data?.data else null
+        if (requestCode == 3 && one != null) {
+            Thread {
+                val ok = try {
+                    doBackup(one)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+                runOnUiThread { web.evaluateJavascript("window.toast&&toast('" + (if (ok) "Backup salvato" else "Backup non riuscito") + "')", null) }
+            }.start()
+            return
+        }
+        if (requestCode == 4 && one != null) {
+            Thread {
+                val w = try {
+                    doRestore(one)
+                } catch (e: Exception) {
+                    null
+                }
+                runOnUiThread { web.evaluateJavascript(if (w != null) "window.onRestore&&onRestore(" + JSONObject.quote(w) + ")" else "window.toast&&toast('File di backup non valido')", null) }
+            }.start()
+            return
+        }
         val uris = ArrayList<Uri>()
         if (resultCode == RESULT_OK && data != null) {
             val cd = data.clipData
@@ -165,6 +194,55 @@ class MainActivity : Activity() {
                 runOnUiThread { web.evaluateJavascript(js, null) }
             }.start()
         }
+    }
+
+    private var pendingWeb = ""
+
+    private fun doBackup(u: Uri) {
+        Lib.save(this)
+        ZipOutputStream(BufferedOutputStream(contentResolver.openOutputStream(u)!!)).use { z ->
+            z.setLevel(0)
+            fun put(name: String, f: File) {
+                if (!f.isFile) return
+                z.putNextEntry(ZipEntry(name))
+                f.inputStream().use { it.copyTo(z) }
+                z.closeEntry()
+            }
+            put("lib.json", File(filesDir, "lib.json"))
+            put("pl.json", File(filesDir, "pl.json"))
+            Lib.dir(this).listFiles()?.forEach { put("music/" + it.name, it) }
+            File(filesDir, "art").listFiles()?.forEach { put("art/" + it.name, it) }
+            z.putNextEntry(ZipEntry("web.json"))
+            z.write(pendingWeb.toByteArray())
+            z.closeEntry()
+        }
+    }
+
+    private fun doRestore(u: Uri): String {
+        var web = ""
+        var libJson = ""
+        var found = false
+        ZipInputStream(BufferedInputStream(contentResolver.openInputStream(u)!!)).use { z ->
+            while (true) {
+                val e = z.nextEntry ?: break
+                val n = e.name
+                if (n == "web.json") {
+                    web = z.readBytes().toString(Charsets.UTF_8)
+                } else if (n == "lib.json") {
+                    libJson = z.readBytes().toString(Charsets.UTF_8)
+                    found = true
+                } else if (n.startsWith("music/") && !e.isDirectory) {
+                    val f = File(Lib.dir(this), File(n).name)
+                    if (!f.exists()) f.outputStream().use { o -> z.copyTo(o) }
+                } else if (n.startsWith("art/") && !e.isDirectory) {
+                    val d = File(filesDir, "art").apply { mkdirs() }
+                    File(d, File(n).name).outputStream().use { o -> z.copyTo(o) }
+                }
+            }
+        }
+        if (!found) throw IllegalArgumentException("no backup")
+        Lib.merge(this, libJson)
+        return web
     }
 
     private fun importOne(u: Uri): Boolean {
@@ -212,6 +290,27 @@ class MainActivity : Activity() {
             runOnUiThread {
                 try {
                     startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("audio/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true), 2)
+                } catch (e: Exception) {
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun backup(webData: String) {
+            pendingWeb = webData
+            runOnUiThread {
+                try {
+                    startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/zip").putExtra(Intent.EXTRA_TITLE, "Risuona-backup.zip"), 3)
+                } catch (e: Exception) {
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun restore() {
+            runOnUiThread {
+                try {
+                    startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), 4)
                 } catch (e: Exception) {
                 }
             }

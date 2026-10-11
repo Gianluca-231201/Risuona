@@ -61,6 +61,26 @@ object Lib {
     }
 
     @Synchronized
+    fun merge(c: Context, json: String): Int {
+        var n = 0
+        try {
+            val a = JSONArray(json)
+            val l = all(c)
+            for (i in 0 until a.length()) {
+                val o = a.getJSONObject(i)
+                val id = o.getString("id")
+                if (l.none { it.id == id } && File(dir(c), o.getString("file")).exists()) {
+                    l.add(Tr(id, o.getString("file"), o.optString("name"), o.optString("title"), o.optString("artist"), o.optString("album"), o.optInt("no"), o.optLong("dur"), o.optString("ta"), o.optString("tal"), o.optString("tt"), o.optInt("tn")))
+                    n++
+                }
+            }
+            save(c)
+        } catch (e: Exception) {
+        }
+        return n
+    }
+
+    @Synchronized
     fun snapshot(c: Context): List<Tr> = ArrayList(all(c))
 
     class Pl(val id: String, val name: String, val ids: List<String>)
