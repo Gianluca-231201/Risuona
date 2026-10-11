@@ -190,6 +190,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 </div>
 <script>
 var PL=[];try{PL=JSON.parse(localStorage.getItem('rs_pl')||'[]')||[]}catch(e){}
+var VZ=[],VC=[];
 var REN={};try{REN=JSON.parse(localStorage.getItem('rs_ren')||'{}')||{}}catch(e){}
 function dn(a){return REN['ar|'+a]||a}
 function dal(d){return REN['al|'+d.ar+'|'+d.t]||d.t}
@@ -639,7 +640,6 @@ function lpc(b,fn){lp(b,fn);return b}
 function renS(rk,orig,cur,after){sheet('Nuovo nome',[['Salva',v=>{if(!v)return;if(v===orig)delete REN[rk];else REN[rk]=v;try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}if(after)after();sync.done=0;sync()}],['Annulla']],'Nome',cur)}
 function editAr(ar){sheet(dn(ar),[['Cambia foto',()=>{pk=agk(ar);$('imgf').click()}],['Cambia nome',()=>renS('ar|'+ar,ar,dn(ar))],['Annulla']])}
 function editAl(ai){const d=DISC[ai];if(!d)return;sheet(dal(d),[['Cambia foto',()=>{pk=akA(ai);$('imgf').click()}],['Cambia nome',()=>renS('al|'+d.ar+'|'+d.t,d.t,dal(d),()=>{if(d.dyn&&view.l===2)view={l:1,ar:d.ar}})],['Annulla']])}
-var VZ=[],VC=[];
 window.onViz=function(a){VZ=a};
 function draw(){
   const r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;
