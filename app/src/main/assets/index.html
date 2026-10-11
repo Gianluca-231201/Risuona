@@ -528,6 +528,7 @@ function dynAlbum(ar,al){let ai=DISC.findIndex((d,x)=>x>=NST&&d.ar===ar&&d.t===a
 function sync(){
   const L=JSON.parse(Android.library()),cur=nat.id||(T[i]?T[i].id:''),meta=[],arts=[];
   T.length=0;DISC.length=NST;ARTS.length=NAR;KD={};
+  DISC.forEach(d=>{if(d.n0==null)d.n0=d.tr.length;else d.tr.length=d.n0});
   const cat=ARTS.slice(),isCat=s=>{if(!s)return;const n=norm(s);return cat.find(a=>n.includes(norm(a)))};
   L.forEach(r=>{
     const raw=r.name.replace(/\.[^.]+$/,'').replace(/mp3j\.cc/i,'').replace(/_/g,' ').trim();
@@ -541,8 +542,9 @@ function sync(){
       const ar=known||tagAr||pre;
       if(ar){
         const title=(r.tt||'').trim()||(sp.length>1?sp.slice(1).join(' - ').trim():'')||raw;
-        const ai=dynAlbum(ar,'Altri brani');
-        t.ai=ai;t.name=title;t.tn=r.tn||999;DISC[ai].tr.push([title,'',t]);
+        const si=DISC.findIndex((d,x)=>x<NST&&d.ar===ar&&(d.t==='Singoli'||d.t==='Singoli ed extra'));
+        if(si>=0){const d=DISC[si];t.ai=si;t.name=title;d.tr.push([title,'']);t.ti=d.tr.length-1}
+        else{const ai=dynAlbum(ar,'Singoli');t.ai=ai;t.name=title;t.tn=r.tn||999;DISC[ai].tr.push([title,'',t])}
       }
     }
     T.push(t);
