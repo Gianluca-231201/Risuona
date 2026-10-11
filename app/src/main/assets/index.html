@@ -356,7 +356,7 @@ function render(){
   const have=ai=>DISC[ai].tr.filter((_,ti)=>map[ai+'-'+ti]!=null).length;
   const cnt=ai=>DISC[ai].tr.filter((_,ti)=>map[ai+'-'+ti]!=null||!HID[hk(ai,ti)]).length,vis=ai=>cnt(ai)>0,hideM=a=>{a.forEach(ai=>DISC[ai].tr.forEach((_,ti)=>{if(map[ai+'-'+ti]==null)HID[hk(ai,ti)]=1}));saveH();render()};const tot=DISC.reduce((s,d,ai)=>s+cnt(ai),0),hv=T.filter(t=>t.ai!=null).length;
   const oth=T.map((t,k)=>[t,k]).filter(x=>x[0].ai==null);
-  const trows=(ai,f)=>{const r=[];DISC[ai].tr.forEach((tr,ti)=>{const k=map[ai+'-'+ti];if(f&&!f(tr[0]))return;if(k!=null||(!only&&!HID[hk(ai,ti)]))r.push(mrow(ai,ti,row(ti+1,tr[0],k!=null&&isFinite(T[k].dur)?fmt(T[k].dur):tr[1]||'',k),k))});return r};
+  const trows=(ai,f)=>{const r=[];DISC[ai].tr.forEach((tr,ti)=>{const k=map[ai+'-'+ti];if(f&&!f(tr[0]))return;if(k!=null||(!only&&!HID[hk(ai,ti)]))r.push(mrow(ai,ti,row(r.length+1,tr[0],k!=null&&isFinite(T[k].dur)?fmt(T[k].dur):tr[1]||'',k),k))});return r};
   const orows=f=>oth.filter(x=>!f||f(x[0].name)).map((x,n)=>row(n+1,x[0].name,fmt(x[0].dur),x[1]));
   const ids=a=>DISC.map((_,ai)=>ai).filter(ai=>DISC[ai].ar===a);
   const akey=a=>a==='Ultimo'?'ar':'ar-'+a;
