@@ -502,12 +502,12 @@ var NST=DISC.length,NAR=ARTS.length,KD={};
 function akA(ai){const d=DISC[ai];return d&&d.dyn?'ald-'+d.ar+'|'+d.t:'al-'+ai}
 function dynAlbum(ar,al){let ai=DISC.findIndex((d,x)=>x>=NST&&d.ar===ar&&d.t===al);if(ai<0){DISC.push({t:al,y:'',ar:ar,tr:[],dyn:1});ai=DISC.length-1;if(!ARTS.includes(ar))ARTS.push(ar)}return ai}
 function sync(){
-  const L=swapLy(JSON.parse(Android.library())),cur=nat.id||(T[i]?T[i].id:''),meta=[],arts=[];
+  const L=JSON.parse(Android.library()),cur=nat.id||(T[i]?T[i].id:''),meta=[],arts=[];
   T.length=0;DISC.length=NST;ARTS.length=NAR;KD={};
   const cat=ARTS.slice(),isCat=s=>{if(!s)return;const n=norm(s);return cat.find(a=>n.includes(norm(a)))};
   L.forEach(r=>{
     const raw=r.name.replace(/\.[^.]+$/,'').replace(/mp3j\.cc/i,'').replace(/_/g,' ').trim();
-    const t={id:r.id,name:raw,raw:r.name,ly:isLy(r),dur:r.dur?r.dur/1000:NaN,ai:null,ti:null};
+    const t={id:r.id,name:raw,raw:r.name,ly:/lyric|testo|karaoke/i.test(r.name+' '+(r.tt||'')),dur:r.dur?r.dur/1000:NaN,ai:null,ti:null};
     const sp=raw.split(/\s+-\s+/),pre=sp.length>1&&!/^\d+$/.test(sp[0].trim())?sp[0].trim():'';
     const tagAr=(r.ta||'').trim(),known=isCat(tagAr)||isCat(raw),foreign=!known&&(tagAr||pre);
     let m=foreign?null:match(raw);
@@ -686,27 +686,6 @@ window.onRestore=function(web){
     sync.done=0;sync();toast('Backup ripristinato');
   }catch(e){toast('File di backup non valido')}
 };
-function isLy(r){return /\b(lyrics?|testo|karaoke)\b/i.test((r.name+' '+(r.tt||'')).replace(/_/g,' '))}
-function swapLy(L){
-  const g={};
-  L.forEach(r=>{
-    const raw=r.name.replace(/\.[^.]+$/,'').replace(/mp3j\.cc/i,'').replace(/_/g,' ').replace(/[\(\[]?\s*\b(official\s+)?(lyrics?(\s+video)?|testo|karaoke)\b\s*[\)\]]?/ig,' ').trim();
-    const m=match(raw),k=m?'c'+m[1]+'-'+m[2]:'n'+norm(raw);
-    (g[k]=g[k]||[]).push(r);
-  });
-  let n=0;
-  Object.keys(g).forEach(k=>{
-    const a=g[k],keep=a.find(r=>!isLy(r));
-    if(!keep)return;
-    a.filter(isLy).forEach(r=>{
-      PL.forEach(p=>{p.ids=p.ids.map(x=>x===r.id?keep.id:x).filter((x,j,arr)=>arr.indexOf(x)===j)});
-      Android.remove(r.id);n++;
-    });
-  });
-  if(!n)return L;
-  saveP();toast(n===1?'Sostituita 1 versione lyrics':'Sostituite '+n+' versioni lyrics');
-  return JSON.parse(Android.library());
-}
 </script>
 
 </html>
