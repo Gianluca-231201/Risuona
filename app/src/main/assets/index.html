@@ -510,7 +510,7 @@ function sync(){
       const ar=known||tagAr||pre;
       if(ar){
         const title=(r.tt||'').trim()||(sp.length>1?sp.slice(1).join(' - ').trim():'')||raw;
-        const ai=dynAlbum(ar,(r.tal||'').trim()||'Altri brani');
+        const ai=dynAlbum(ar,'Altri brani');
         t.ai=ai;t.name=title;t.tn=r.tn||999;DISC[ai].tr.push([title,'',t]);
       }
     }
