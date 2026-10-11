@@ -385,7 +385,7 @@ function render(){
   }else{
     crumb='Altri file';const o=orows();if(o.length)sect(l,'Altri file','',o.length,o);else{view={l:0};return render()}
   }
-  $('crumb').textContent=crumb;$('back').hidden=!!q||view.l===0;$('edit').hidden=!!q||(view.l!==1&&view.l!==2);
+  $('crumb').textContent=crumb;$('back').hidden=!!q||view.l===0;$('edit').hidden=!!q||(view.l!==1&&view.l!==2&&view.l!==5);
   $('empty').hidden=T.length>0;
   $('count').textContent=hv+'/'+tot+' brani';
   ['prev','next','play'].forEach(b=>$(b).disabled=!T.length);
@@ -488,7 +488,7 @@ function step(){}
 function b64blob(b){return new Blob([Uint8Array.from(atob(b),c=>c.charCodeAt(0))])}
 function toJpg(blob){return createImageBitmap(blob).then(im=>{const s=Math.min(1,512/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85).split(',')[1]})}
 var _si=setImg;
-function artT(k){if(k==='ar')return[dn('Ultimo'),''];if(k.indexOf('ar-')===0)return[dn(k.slice(3)),''];const d=DISC[KD[k]!=null?KD[k]:k.indexOf('al-')===0?+k.slice(3):-1];return d?[dn(d.ar),dal(d)]:null}
+function artT(k){if(k.indexOf('pl-')===0){const p=PL.find(x=>x.id===k.slice(3));return p?['playlist',p.name]:null}if(k==='ar')return[dn('Ultimo'),''];if(k.indexOf('ar-')===0)return[dn(k.slice(3)),''];const d=DISC[KD[k]!=null?KD[k]:k.indexOf('al-')===0?+k.slice(3):-1];return d?[dn(d.ar),dal(d)]:null}
 setImg=function(k,blob){_si(k,blob);const a=artT(k);if(a)toJpg(blob).then(b=>Android.setArt(a[0],a[1],b)).catch(()=>{})};
 function show(t){const al=t&&t.ai!=null?DISC[t.ai]:null;$('title').textContent=t?t.name:'Nessun brano';$('sub').textContent=!t?'Carica i tuoi file audio':al?dn(al.ar)+' · '+dal(al)+(al.y?' · '+al.y:''):'File locale'}
 var NST=DISC.length,NAR=ARTS.length,KD={};
@@ -579,7 +579,8 @@ function newPl(then){sheet('Nuova playlist',[['Crea',v=>{if(!v)return;const p={i
 function putIn(p,t){if(!p.ids.includes(t.id)){p.ids.push(t.id);saveP()}toast('Aggiunto a '+p.name)}
 function addTo(t){sheet('Aggiungi a playlist',PL.map(p=>[p.name+(p.ids.includes(t.id)?'  ✓':''),()=>putIn(p,t)]).concat([['+ Nuova playlist',()=>newPl(p=>putIn(p,t))],['Annulla']]))}
 function plMenu(p){sheet(p.name,[
-  ['Rinomina',()=>sheet('Rinomina playlist',[['Salva',v=>{if(v){p.name=v;saveP();render()}}],['Annulla']],'Nome della playlist',p.name)],
+  ['Cambia foto',()=>{pk='pl-'+p.id;$('imgf').click()}],
+  ['Cambia nome',()=>sheet('Nuovo nome',[['Salva',v=>{if(v){p.name=v;saveP();sync.done=0;sync()}}],['Annulla']],'Nome della playlist',p.name)],
   ['Elimina playlist',()=>confirmS('Eliminare la playlist "'+p.name+'"? I brani restano nell\'app.','Elimina',()=>{PL=PL.filter(x=>x!==p);saveP();if(view.l===5)view={l:4};render()}),1],
   ['Annulla']])}
 function trackMenu(k){
@@ -609,7 +610,7 @@ function mrow(ai,ti,li,k){
 }
 function del(k){const id=T[k].id;PL.forEach(p=>{p.ids=p.ids.filter(x=>x!==id)});saveP();Android.remove(id);sync()}
 function libView(l){
-  const c=PL.map(p=>{const b=card(p.name,p.ids.filter(id=>T.some(t=>t.id===id)).length+' brani',()=>{view={l:5,pid:p.id};clr()});lp(b,()=>plMenu(p));return b});
+  const c=PL.map(p=>{const b=card(p.name,p.ids.filter(id=>T.some(t=>t.id===id)).length+' brani',()=>{view={l:5,pid:p.id};clr()},'pl-'+p.id);lp(b,()=>plMenu(p));return b});
   c.push(card('Nuova playlist','Crea',()=>newPl()));
   const h=document.createElement('h3');h.className='plh';h.textContent='Playlist';l.appendChild(h);grid(l,c);
   if(T.length)sect(l,'Brani caricati','',T.length,T.map((t,k)=>row(k+1,t.name,fmt(t.dur),k)));
@@ -625,6 +626,7 @@ function plView(l){
 }
 $('back').onclick=()=>{view=view.l===2?{l:1,ar:DISC[view.ai].ar}:view.l===5?{l:4}:{l:0};render()};
 $('edit').onclick=()=>{
+  if(view.l===5){const p=PL.find(x=>x.id===view.pid);if(p)plMenu(p);return}
   const isAl=view.l===2,d=isAl?DISC[view.ai]:null,ar=isAl?d.ar:view.ar,rk=isAl?'al|'+d.ar+'|'+d.t:'ar|'+ar,cur=isAl?dal(d):dn(ar),ik=isAl?akA(view.ai):agk(ar);
   sheet(isAl?'Modifica album':'Modifica artista',[
     ['Cambia foto',()=>{pk=ik;$('imgf').click()}],
