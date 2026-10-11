@@ -691,7 +691,7 @@ $('edit').onclick=()=>{
 function lpc(b,fn){lp(b,fn);return b}
 function renS(rk,orig,cur,after){sheet('Nuovo nome',[['Salva',v=>{if(!v)return;if(v===orig)delete REN[rk];else REN[rk]=v;try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}if(after)after();sync.done=0;sync()}],['Annulla']],'Nome',cur)}
 function editAr(ar){sheet(dn(ar),[['Cambia foto',()=>{pk=agk(ar);$('imgf').click()}],['Cambia nome',()=>renS('ar|'+ar,ar,dn(ar))],['Annulla']])}
-function editAl(ai){const d=DISC[ai];if(!d)return;sheet(dal(d),[['Cambia foto',()=>{pk=akA(ai);$('imgf').click()}],['Cambia nome',()=>renS('al|'+d.ar+'|'+d.t,d.t,dal(d),()=>{if(d.dyn&&view.l===2)view={l:1,ar:d.ar}})],['Annulla']])}
+function editAl(ai){const d=DISC[ai];if(!d)return;sheet(dal(d),[['Cambia foto',()=>{pk=akA(ai);$('imgf').click()}],['Cambia nome',()=>renS('al|'+d.ar+'|'+d.t,d.t,dal(d),()=>{if(d.dyn&&view.l===2)view={l:1,ar:d.ar}})],['Elimina album',()=>delAlbum(ai),1],['Annulla']])}
 window.onViz=function(a){VZ=a};
 function draw(){
   const r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;
@@ -788,6 +788,15 @@ function playMix(){
 [STAR,HID].forEach(m=>Object.keys(m).forEach(k=>{if(k.indexOf('|Singoli|')>0){m[k.replace('|Singoli|','|Singoli ed extra|')]=m[k];delete m[k]}}));
 Object.keys(REN).forEach(k=>{if(/^al\|.*\|Singoli$/.test(k)){REN[k+' ed extra']=REN[k];delete REN[k]}});
 saveS();saveH();try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}
+function delAlbum(ai){
+  const d=DISC[ai];if(!d)return;
+  const ids=T.filter(t=>t.ai===ai).map(t=>t.id);
+  confirmS('Eliminare l\'album "'+dal(d)+'"?'+(ids.length?' Verranno eliminati anche '+ids.length+(ids.length===1?' brano caricato.':' brani caricati.'):''),'Elimina',()=>{
+    if(!d.dyn){const n=d.n0!=null?d.n0:d.tr.length;for(let ti=0;ti<n;ti++)HID[hk(ai,ti)]=1;saveH()}
+    ids.forEach(id=>{PL.forEach(p=>{p.ids=p.ids.filter(x=>x!==id)});Android.remove(id)});saveP();
+    view={l:0};sync();toast('Album eliminato');
+  });
+}
 </script>
 
 </html>
