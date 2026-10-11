@@ -299,18 +299,20 @@ D(`Atlantico`,2018,`Voglio;Hola (I Say);Buona vita;Muhammad Ali;La casa azul;Mil
 D(`Materia (Terra)`,2021,`Cambia un uomo;Una canzone triste;Il meno possibile (feat. Gazzelle);In due minuti;Mi fiderò (feat. Madame);Ma stasera;Appunto 1. 23-01-2021;Proibito;Appunto 2. 14-05-2021;Luce;Un fiore contro il diluvio`,'Marco Mengoni'),
 D(`Materia (Pelle)`,2022,`No Stress;In città;Attraverso te (feat. LRDL);Tutti i miei ricordi;Chiedimi come sto (feat. Bresh);Migliore di me;Unatoka Wapi;Neruda;Parlami sopra;Appunto 3. 16-03-2022;Respira;Appunto 4. 27-06-2022;Ancora una volta (con Samuele Bersani)`,'Marco Mengoni'),
 D(`Materia (Prisma)`,2023,`Due vite;Fiori d'orgoglio;Pazza musica;Incenso;Un'altra storia;Appunto 5: Non sono questo;In tempo;The Damned of the Earth;Lasciami indietro;Due nuvole`,'Marco Mengoni'),
-D(`Più popolari`,'',`Stitches;Treat You Better;There's Nothing Holdin' Me Back;Mercy;Señorita (con Camila Cabello);In My Blood;If I Can't Have You;Lost in Japan;Life of the Party;Something Big;I Know What You Did Last Summer (con Camila Cabello);Never Be Alone;Youth (feat. Khalid);Wonder;Monster (con Justin Bieber);Summer of Love;When You're Gone;It'll Be Okay;Why Why Why;Heart of Gold`,'Shawn Mendes'),
-D(`Più popolari`,'',`Everytime;Why Don't You Love Me?;Me Minus You;OK;What Happened Last Night;Crazy;Frida (mai, mai, mai);Come le onde (feat. J-Ax);Pensare male (con Elodie);Los Angeles (feat. Guè);Non è vero;Cabriolet Panorama;Mal di gola;Leoni al sole;Blackout;Italodisco;Un ragazzo una ragazza;Karma;Tu con chi fai l'amore;Pronto come va`,'The Kolors'),
-D(`Singoli`,'',`Wake Up;Sto bene così;Stella cadente;Non litighiamo più;Oh ma`,'Rocco Hunt'),
+D(`Più popolari`,'',`Señorita (con Camila Cabello);Treat You Better;There's Nothing Holdin' Me Back;Stitches;Mercy;If I Can't Have You;In My Blood;I Know What You Did Last Summer (con Camila Cabello);Monster (con Justin Bieber);Wonder;Lost in Japan;Imagination;Summer of Love;Fallin' All In You;It'll Be Okay;Never Be Alone;When You're Gone;Youth (feat. Khalid);Life of the Party`,'Shawn Mendes'),
+D(`Più popolari`,'',`Italodisco;Un ragazzo una ragazza;Pensare male (con Elodie);Tu con chi fai l'amore;Karma;Cabriolet Panorama;Pronto come va;Non è vero;Los Angeles (feat. Guè);Come le onde (feat. J-Ax);Everytime;Frida (mai, mai, mai);Me Minus You;Blackout;Mal di gola;Rolling Stones`,'The Kolors'),
+D(`Singoli`,'',`Wake Up;Sto bene così;Stella cadente;Non litighiamo più;Oh ma;Caramello;Mille vote ancora;A' vita senz' e te (Me fa paura);Musica italiana`,'Rocco Hunt'),
 D(`Singoli`,'',`Senza parole;Se ti potessi dire;La verità;Un mondo migliore;Come nelle favole;Ad ogni costo;L'uomo più semplice;Gli sbagli che fai`,'Vasco Rossi'),
-D(`Singoli`,'',`Nessun grado di separazione;Chiamami per nome;Magnifico;Cigno nero`,'Francesca Michielin'),
-D(`Singoli`,'',`Enemy;Warriors;Birds;Next to Me;Children of the Sky`,'Imagine Dragons'),
-D(`Singoli`,'',`Calore;Non è l'inferno;Io sono bella;Stupida allegria;Latina;Ogni volta è così;Apnea`,'Emma'),
-D(`Singoli`,'',`Sinceramente;Storie brevi;Dieci;Movimento lento;Tropicana;Disco Paradise`,'Annalisa'),
-D(`Singoli`,'',`Balorda nostalgia;Depresso fortunato`,'Olly'),
-D(`Singoli`,'',`Bellissimissima;Il filo rosso;A me mi piace`,'Alfa'),
+D(`Singoli`,'',`Nessun grado di separazione;Chiamami per nome;Magnifico;Cigno nero;Fotografia;Fango in Paradiso;Nei tuoi occhi`,'Francesca Michielin'),
+D(`Singoli`,'',`Enemy;Warriors;Birds;Next to Me;Children of the Sky;Not Today;Monster`,'Imagine Dragons'),
+D(`Singoli`,'',`Calore;Non è l'inferno;Io sono bella;Stupida allegria;Latina;Ogni volta è così;Apnea;Pezzo di cuore;Femme fatale;Che sogno incredibile;Luci blu;Brutta storia;Vacci piano;Ho voglia di te`,'Emma'),
+D(`Singoli`,'',`Sinceramente;Storie brevi;Dieci;Movimento lento;Tropicana;Disco Paradise;Canzone estiva`,'Annalisa'),
+D(`Singoli`,'',`Balorda nostalgia;Depresso fortunato;Questa domenica;Così così;Il brivido della vita;Occhi color mare`,'Olly'),
+D(`Singoli`,'',`Bellissimissima;Il filo rosso;A me mi piace;Ci sarò;Le cose in comune;Sogna, ragazzo, sogna;5 minuti;You Make Me So Happy`,'Alfa'),
 D(`Singoli`,'',`Ringo Starr;Ridere;Rubami la notte;Coca Zero`,'Pinguini Tattici Nucleari'),
-D(`Singoli`,'',`Mandare tutto all'aria;Sai che`,'Marco Mengoni')
+D(`Singoli`,'',`Mandare tutto all'aria;Sai che;Duemila volte;Sto bene al mare;Onde`,'Marco Mengoni'),
+D(`Singoli`,'',`Ops`,'Mr. Rain'),
+D(`Singoli`,'',`Canto d'amore;Va tutto bene`,'Angelina Mango')
 ];
 const norm=s=>' '+s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' ';
 const KEYS=[];
@@ -712,19 +714,19 @@ function saveS(){try{localStorage.setItem('rs_star',JSON.stringify(STAR))}catch(
 function popSet(){
   if(popSet.s)return popSet.s;
   const P={
-  "Ultimo":"Pianeti;Sogni appesi;Giusy;Il ballo delle incertezze;Poesia senza veli;Cascare nei tuoi occhi;Ti dedico il silenzio;La stella più fragile dell'universo;I tuoi particolari;Piccola stella;Rondini al guinzaglio;Fateme cantà;Quando fuori piove;Ipocondria;Tutto questo sei tu;22 settembre;Niente;Buongiorno vita;Quel filo che ci unisce;Vieni nel mio cuore;Ti va di stare bene;Alba;Altrove;Occhi lucidi;Bella davvero;Tutto",
-  "Rocco Hunt":"Nu juorno buono;Tutto resta;Vene e vvà;Se mi chiami;Ti volevo dedicare;Benvenuti in Italy;Nisciun';Stu core t'apparten;A un passo dalla Luna;Un bacio all'improvviso;Fantastica;Caffelatte;Sultant' a mia",
-  "Vasco Rossi":"Albachiara;Jenny è pazza;Colpa d'Alfredo;Anima fragile;Siamo solo noi;Vado al massimo;Ogni volta;Splendida giornata;Bollicine;Una canzone per te;Vita spericolata;Toffee;C'è chi dice no;Vivere una favola;Ridere di te;Brava Giulia;Liberi...liberi;Gli spari sopra (Celebrate);Vivere;Gabri;...Stupendo;Delusa;Gli angeli;Sally;Io no....;Quanti anni hai;Rewind;Siamo soli;Ti prendo e ti porto via;Stupido hotel;Buoni o cattivi;Come stai;Un senso;E…;Il mondo che vorrei;Eh... già;Vivere o niente;Dannate nuvole;Come vorrei;Siamo qui;Una canzone d'amore buttata via",
-  "Francesca Michielin":"Distratto;Sola;L'amore esiste;Battito di ciglia;Lontano;Vulcano;Io non abito al mare;Bolivia;Tropicale;Cheyenne;Monolocale;Stato di natura;Quello che ancora non c'è;Bonsoir",
-  "Mr. Rain":"Carillon;I grandi non piangono mai;Ipernova;Fiori di Chernobyl;9.3;Meteoriti;A forma di origami;Non c'è più musica;Crisalidi;Neve su Marte;Sincero;Supereroi;Due altalene;La fine del mondo;Paura del buio",
-  "Imagine Dragons":"Radioactive;Demons;It's Time;On Top of the World;I Bet My Life;Shots;Gold;Believer;Thunder;Whatever It Takes;Walking the Wire;Natural;Bad Liar;Zero;Machine;Follow You;Wrecked;Bones;Sharks;Eyes Closed;Nice to Meet You;Take Me to the Beach",
-  "Emma":"Con le nuvole;Cullami;Sarò libera;Cercavo amore;Amami;Dimentico tutto;L'amore non mi basta;La mia felicità;Trattengo il fiato;Occhi profondi;Arriverà l'amore;Io di te non ho paura;Il paradiso non esiste;L'isola;Mi parli piano;Effetto domino;Mezzo mondo;Iniziamo dalla fine;Amore cane;Taxi sulla Luna",
-  "Annalisa":"Diamante lei e luce lui;Senza riserva;Scintille;Alice e il blu;Vincerò;Una finestra tra le stelle;Se avessi un cuore;Il diluvio universale;Il mondo prima di te;Bye Bye;Direzione la vita;Un domani;Tsunami;Houseparty;Romantica;Bellissima;Mon Amour;Ragazza sola;Euforia;Stelle;Indaco violento;Maschio;Piazza San Marco;Esibizionista",
-  "Olly":"Polvere;L'anima balla;Menomale che c'è il mare;Bianca;Fammi morire;Un'altra volta;Devastante;Per due come noi;A squarciagola;Quei ricordi là;Scarabocchi;Il campione;Noi che;È festa;La lavatrice si è rotta",
-  "Alfa":"Cin cin;Wanderlust!;Il giro del mondo;Testa tra le nuvole, Pt. 1;Sul più bello;San Lorenzo;Snob;Bevo tutta la notte;Vai!;Vabbè ciao;Il mio colore preferito;Nei tuoi occhi cosa c'è",
-  "Pinguini Tattici Nucleari":"Irene;Tetris;Verdura;Sashimi;Antartide;Lake Washington Boulevard;Fuori dall'hype;Scatole;Scooby Doo;Scrivile scemo;Pastello bianco;La storia infinita;Giulia;Bohémien;Giovani Wannabe;Ricordi;Dentista Croazia;Hold on;Zen;Hikikomori;Fede;L'ultima volta;Romantico ma muori;Islanda;Bottiglie vuote;Nativi digitali;Migliore",
-  "Angelina Mango":"La noia;Che t'o dico a fa';Ci pensiamo domani;Voglia di vivere;Mani vuote;Melodrama;Uguale a me;Fila indiana;Smile;Gioielli di famiglia;Crush;Ioeio;Pacco fragile",
-  "Marco Mengoni":"Dove si vola;Credimi ancora;In un giorno qualunque;Solo (Vuelta al ruedo);Tanto il resto cambia;Dall'inferno;L'essenziale;Pronto a correre;Non passerai;Bellissimo;La valle dei re;Guerriero;Esseri umani;Io ti aspetto;Ti ho voluto bene veramente;Parole in circolo;Ricorderai l'amore;Solo due satelliti;Hola (I Say);Voglio;Muhammad Ali;Buona vita;Ma stasera;Cambia un uomo;Mi fiderò;Luce;No Stress;Tutti i miei ricordi;Due vite;Pazza musica;Un'altra storia"
+  "Ultimo":"Pianeti;Piccola stella;Ti dedico il silenzio;I tuoi particolari;L'ultima poesia;Rondini al guinzaglio;Cascare nei tuoi occhi;Il ballo delle incertezze;Vieni nel mio cuore;Sogni appesi;Poesia senza veli;Altrove;Tutto questo sei tu;22 settembre;La stella più fragile dell'universo;Ipocondria;Quel filo che ci unisce;Buongiorno vita;Bella davvero;Ovunque tu sia;Alba;L'unica forza che ho;Racconterò di te;Amati sempre;Niente",
+  "Rocco Hunt":"Ti volevo dedicare;A un passo dalla Luna;Un bacio all'improvviso;Non litighiamo più;Nisciun';Caramello;Stu core t'apparten;Ngopp' a luna;Se mi chiami;Buonanotte amò;Che me chiamme a fa?;Nu juorno buono;Mille vote ancora;Benvenuti in Italy;Se tornerai;Fantastica;Oh ma;A' vita senz' e te;L'ammore overo;Musica italiana;Sultant' a mia",
+  "Vasco Rossi":"Sally;Albachiara;E…;Senza parole;Come nelle favole;Vita spericolata;Vivere;Ogni volta;Una canzone per te;Non l'hai mica capito;Un senso;Quanti anni hai;Rewind;Una canzone d'amore buttata via;T'immagini;Ti prendo e ti porto via;Siamo soli;Gli angeli;Eh... già;Siamo solo noi;...Stupendo;Dillo alla Luna;Ridere di te;Colpa d'Alfredo;La nostra relazione;La pioggia alla domenica;Splendida giornata;Gli spari sopra (Celebrate);Bollicine;Se ti potessi dire",
+  "Francesca Michielin":"Fotografia;Magnifico;Chiamami per nome;Cigno nero;Io non abito al mare;L'amore esiste;Nessun grado di separazione;Vulcano;Cheyenne;Fango in Paradiso;Stato di natura;Distratto;Un cuore in due;Occhi grandi grandi;Bolivia;Leoni;Battito di ciglia;Gange;Bonsoir;Nei tuoi occhi;Lontano;Disco dance;Monolocale",
+  "Mr. Rain":"Supereroi;Fiori di Chernobyl;Ipernova;Carillon;Ops;Meteoriti;I grandi non piangono mai;Due altalene;La fine del mondo;9.3;Un milione di notti;Fuori luogo;Sincero;A forma di origami;Crisalidi;Superstite;Non c'è più musica;Neve su Marte;La storia di Sam;Rainbow Soda;Pianeti",
+  "Imagine Dragons":"Believer;Demons;Thunder;Radioactive;Enemy;Bones;Whatever It Takes;Natural;Bad Liar;On Top of the World;It's Time;Warriors;Shots;Follow You;Sharks;Wrecked;Next to Me;I Bet My Life;Birds;Walking the Wire;Zero;I'm So Sorry;Bleeding Out;Rise Up;Not Today;Monster",
+  "Emma":"Taxi sulla Luna;Ho voglia di te;L'amore non mi basta;Apnea;Mezzo mondo;Pezzo di cuore;Mi parli piano;Dimentico tutto;Femme fatale;Occhi profondi;Ogni volta è così;Amami;Che sogno incredibile;Iniziamo dalla fine;Non è l'inferno;Amore cane;Latina;Stupida allegria;Luci blu;Io sono bella;Arriverà l'amore;Brutta storia;Vacci piano",
+  "Annalisa":"Mon Amour;Sinceramente;Disco Paradise;Bellissima;Storie brevi;Tropicana;Movimento lento;Dieci;Una finestra tra le stelle;Maschio;Il mondo prima di te;Un domani;Esibizionista;Euforia;Bye Bye;Direzione la vita;Ragazza sola;Piazza San Marco;Houseparty;Tsunami;Canzone estiva",
+  "Olly":"Devastante;Balorda nostalgia;Per due come noi;Scarabocchi;Questa domenica;Quei ricordi là;Menomale che c'è il mare;Depresso fortunato;Polvere;A squarciagola;I cantieri del Giappone;Così così;È festa;Un'altra volta;A noi non serve far l'amore;Bianca;L'anima balla;Il brivido della vita;Occhi color mare",
+  "Alfa":"Cin cin;Bellissimissima;Il filo rosso;Vai!;A me mi piace;Testa tra le nuvole, Pt. 2;Testa tra le nuvole, Pt. 1;Ci sarò;San Lorenzo;Vabbè ciao;Sul più bello;Dove sei?;Le cose in comune;Wanderlust!;Sogna, ragazzo, sogna;5 minuti;Il giro del mondo;You Make Me So Happy",
+  "Pinguini Tattici Nucleari":"Ridere;Pastello bianco;Giovani Wannabe;Scrivile scemo;Rubami la notte;Ricordi;Ringo Starr;Scooby Doo;Islanda;La storia infinita;Bottiglie vuote;Nonono;Romantico ma muori;Lake Washington Boulevard;Amaro;Verdura;La banalità del mare;Antartide;Coca Zero;Giulia;Hold on;Hikikomori",
+  "Angelina Mango":"La noia;Ci pensiamo domani;Che t'o dico a fa';Melodrama;Voglia di vivere;Canto d'amore;Mani vuote;Fila indiana;Uguale a me;Diamoci una tregua;Velo sugli occhi;Ioeio;Va tutto bene",
+  "Marco Mengoni":"Due vite;Ti ho voluto bene veramente;Hola (I Say);Mi fiderò;Ma stasera;Guerriero;Pazza musica;L'essenziale;Muhammad Ali;Duemila volte;No Stress;Io ti aspetto;Il meno possibile;Esseri umani;Parole in circolo;Sai che;Cambia un uomo;Sto bene al mare;Onde;La casa azul;Voglio;Pronto a correre;Ad occhi chiusi;Un'altra storia;Solo due satelliti"
   };
   const s={},st=t=>t.replace(/\(.*?\)/g,'');
   Object.keys(P).forEach(a=>P[a].split(';').forEach(t=>{s[norm(a)+norm(t)]=1;if(norm(st(t)).trim())s[norm(a)+norm(st(t))]=1}));
@@ -733,7 +735,7 @@ function popSet(){
 function isStar(ai,ti){
   const d=DISC[ai];if(!d||!d.tr[ti])return false;
   const u=STAR[hk(ai,ti)];if(u!=null)return !!u;
-  if(d.t==='Più popolari'||d.t==='Singoli')return true;if(d.dyn)return false;
+  if(d.t==='Più popolari')return true;if(d.dyn)return false;
   const t=d.tr[ti][0],s=popSet();
   return !!(s[norm(d.ar)+norm(t)]||s[norm(d.ar)+norm(t.replace(/\(.*?\)/g,''))]);
 }
