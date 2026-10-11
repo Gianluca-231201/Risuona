@@ -147,7 +147,10 @@ object Lib {
             parent == "all" -> sorted(l).map { item(c, it) }
             parent.startsWith("ar|") -> {
                 val ar = parent.substring(3)
-                l.filter { it.artist == ar }.map { it.album }.distinct().sorted().map { folder("al|$ar|$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_MIXED, artUri(ar, it)) }
+                val mine = l.filter { it.artist == ar }
+                val albums = mine.map { it.album }.distinct().sorted()
+                if (albums.size <= 2) mine.sortedWith(compareBy({ it.album }, { it.no })).map { item(c, it) }
+                else albums.map { folder("al|$ar|$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_MIXED, artUri(ar, it)) }
             }
             parent.startsWith("al|") -> {
                 val p = parent.substring(3)
@@ -166,7 +169,10 @@ object Lib {
             return Pair(q.map { item(c, it, "p|" + pl.id + "|" + it.id) }, q.indexOfFirst { it.id == parts.last() }.coerceAtLeast(0))
         }
         val t = l.find { it.id == id } ?: return null
-        val q = if (t.album.isNotEmpty()) l.filter { it.artist == t.artist && it.album == t.album }.sortedBy { it.no } else sorted(l)
+        val mine = l.filter { it.artist == t.artist }
+        val q = if (t.album.isEmpty()) sorted(l)
+        else if (mine.map { it.album }.distinct().size <= 2) mine.sortedWith(compareBy({ it.album }, { it.no }))
+        else mine.filter { it.album == t.album }.sortedBy { it.no }
         return Pair(q.map { item(c, it) }, q.indexOfFirst { it.id == id }.coerceAtLeast(0))
     }
 }
