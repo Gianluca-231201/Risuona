@@ -128,6 +128,7 @@ li{border-bottom:0}
 .nav svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .nav .on{color:var(--accent)}
 .vol,canvas{display:none!important}
+#only{display:none}
 </style>
 <div class="wrap">
   <header>
@@ -143,7 +144,7 @@ li{border-bottom:0}
     <h2><span class="bc"><button id="back" hidden>‹ Indietro</button><span id="crumb">Artisti</span></span><span id="count"></span></h2>
     <button class="chip" id="only" aria-pressed="false">Solo brani caricati</button>
     <div id="list"></div>
-    <div class="empty" id="empty"><b>Nessun file caricato</b>Premi “+” in alto e scegli i tuoi MP3: vengono abbinati ai brani della discografia.</div>
+    <div class="empty" id="empty"><b>Nessun file caricato</b>Premi “+” in alto e scegli i tuoi MP3: vengono ordinati per artista e album.</div>
   </section>
   <p class="keys">L’abbinamento usa il nome del file, che deve contenere il titolo del brano. I file restano salvati in questo browser.</p>
   <section class="deck">
@@ -180,85 +181,7 @@ try{const v=localStorage.getItem('gd_vol');if(v!==null)$('vol').value=v}catch(e)
 a.volume=+$('vol').value;
 
 const D=(t,y,s,ar='Ultimo')=>({t,y,ar,tr:s.split(';').map(x=>x.split('|'))});
-const DISC=[
-D('Pianeti',2017,"Chiave|3:59;Il capolavoro|2:58;Pianeti|3:44;Mille universi|4:08;Sabbia|3:38;Racconterò di te|3:24;Giusy|3:26;Ovunque tu sia|3:19;La storia di un uomo|3:24;Wendy|3:13;L'unica forza che ho|4:03;Sogni appesi|3:32;L'eleganza delle stelle|3:02;Stasera|4:04"),
-D('Peter Pan',2018,"Buon viaggio|3:11;Canzone stupida|3:56;La stella più fragile dell'universo|3:46;Cascare nei tuoi occhi|3:46;Poesia senza veli|3:38;Il ballo delle incertezze|3:23;Peter Pan (Vuoi volare con me?)|3:46;Dove il mare finisce|3:20;Le stesse cose che facevo con te|3:12;Ti dedico il silenzio|3:54;Domenica|3:10;Vorrei soltanto amarti|2:58;Il vaso|4:12;La casa di un poeta (Piano Live Studio)|3:31;Farfalla bianca (Piano Live Studio)|3:15;Forse dormirai|3:58"),
-D('Colpa delle favole',2019,"Colpa delle favole|3:04;I tuoi particolari|3:39;Quando fuori piove|3:41;Ipocondria|3:01;Fateme cantà|4:11;Rondini al guinzaglio|4:00;Amati sempre|4:04;Quella casa che avevamo in mente|3:24;Piccola stella|3:52;Aperitivo grezzo|3:23;Fermo|2:40;Il tuo nome (Comunque vada con te)|3:01;La stazione dei ricordi|4:10"),
-D('Solo',2021,"Il bambino che contava le stelle|2:27;Niente|3:58;Sul finale|3:54;Solo|3:42;Spari sul petto|3:10;Isolamento|3:01;Quel filo che ci unisce|4:14;Supereroi|4:23;La finestra di Greta|3:15;Buongiorno vita|3:10;Quei ragazzi|3:25;Non sapere mai dove si va|3:02;22 settembre|3:50;7+3|3:13;Tutto questo sei tu|4:04;Non amo|2:43;2:43 AM|3:08"),
-D('Alba',2023,"Alba|3:30;Nuvole in testa|3:14;Amare|3:18;Tutto diventa normale|3:16;Tu|3:31;Vivo per vivere|3:54;Ti va di stare bene|3:33;Vieni nel mio cuore|2:53;Sono pazzo di te|3:41;Joker|3:12;La pioggia di Londra|3:36;Tornare a te|3:55;Le solite paure|2:53;Titoli di coda|3:34"),
-D('Altrove',2024,"Altrove|3:25;Lunedì|3:14;Quando saremo vecchi|3:22;Neve al sole|3:20;Quei due innamorati|3:30;Amore di strada|2:58;Occhi lucidi|3:24;Diluvio universale (feat. Mezzosangue)|2:41"),
-D('Il giorno che aspettavo',2026,"Il giorno che aspettavo;Qualcosa di bello;Romantica;Acquario;Questa insensata voglia di te;Quando dorme la città;Io non so;Cuore di plastica;Avevamo cent'anni;Ci siamo detti tutto"),
-D('Singoli ed extra','',"Equilibrio mentale|3:35;Vorrei rinascere fiore|2:22;Lunedì (unplugged)|3:50;La parte migliore di me;Bella davvero;L'ultima poesia (con Geolier);L'eternità (il mio quartiere) (con Fabrizio Moro);Tutto"),
-D(`Poeta urbano`,2013,`Io posso;Fammi vivere;Quanto darei;L'ammore overo;Happy Meal;Capocannonieri;Atleti;L'occhio del massone;Sfizio personale;Fatti non parole;Io ci sarò;Ultimo viaggio`,'Rocco Hunt'),
-D(`'A verità`,2014,`Senza chances;Ce magnamm;Nu juorno buono;'A verità;Giovane disorientato;Na vota ancora;Tutto resta;Vieni con me;Devo parlare;RH Staff;Replay;Come una cometa;Credi;The Show;Die Young;Nun rimpiango niente;'A voce de guagliune;Nun è fernut'`,'Rocco Hunt'),
-D(`SignorHunt`,2015,`Tengo voglia 'e sunnà;Vene e vvà;Eco do mare;Se mi chiami;Una moneta e un sogno;O' posto mio;O' reggae de guagliune;SignorHunt;Allora no!;Qualcosa di strano;Back in the Days;Maletiempo;Nu brutto suonno;Altri 100 anni;Marcos;'Na stanza nostra`,'Rocco Hunt'),
-D(`Libertà`,2019,`Mai più (feat. Achille Lauro);Nun se ne va;Ti volevo dedicare (feat. J-Ax & Boomdabash);Maledetto sud (feat. Clementino);Street Life;Nisciun' (feat. Geolier);Buonanotte amò;Se tornerai (feat. Neffa);Discofunk;Nun me vuò bene cchiù;A Libertà;Grande bugia;Nun è giusto;Benvenuti in Italy;Ngopp' a luna;Stu core t'apparten`,'Rocco Hunt'),
-D(`Rivoluzione`,2021,`Nel percorso (Lele Adani Intro);Rivoluzione;Solido;Fantastica;L'urdemo vase;Caffelatte;Vada come vada;Fiocco azzurro;Regole da infrangere;Fa'o' brav';Te penso ancora;Un bacio all'improvviso;Che me chiamme a fa?;A un passo dalla Luna;Sultant' a mia`,'Rocco Hunt'),
-D(`...Ma cosa vuoi che sia una canzone...`,1978,`La nostra relazione;...E poi mi parli di una vita insieme;Silvia;Tu che dormivi piano (volò via);Jenny è pazza;Ambarabaciccicoccò;Ed il tempo crea eroi;Ciao (strumentale)`,'Vasco Rossi'),
-D(`Non siamo mica gli americani!`,1979,`Io non so più cosa fare;Fegato, fegato spappolato;Sballi ravvicinati del 3º tipo;(per quello che ho da fare) Faccio il militare;La strega (la diva del sabato sera);Albachiara;Quindici anni fa;Va bè (se proprio te lo devo dire)`,'Vasco Rossi'),
-D(`Colpa d'Alfredo`,1980,`Non l'hai mica capito;Colpa d'Alfredo;Susanna;Anima fragile;Alibi;Sensazioni forti;Tropico del Cancro;Asilo Republic`,'Vasco Rossi'),
-D(`Siamo solo noi`,1981,`Siamo solo noi;Incredibile romantica;Dimentichiamoci questa città;Voglio andare al mare;Brava;Ieri ho sgozzato mio figlio;Che ironia;Valium`,'Vasco Rossi'),
-D(`Vado al massimo`,1982,`Sono ancora in coma;Cosa ti fai;Ogni volta;Vado al massimo;Credi davvero;Amore!?!;Canzone;Splendida giornata;La noia`,'Vasco Rossi'),
-D(`Bollicine`,1983,`Bollicine;Una canzone per te;Portatemi Dio;Vita spericolata;Deviazioni;Giocala;Ultimo domicilio conosciuto;Mi piaci perché`,'Vasco Rossi'),
-D(`Cosa succede in città`,1985,`Cosa c'è;Domani sì, adesso no;Cosa succede in città;Toffee;Ti taglio la gola;Una nuova canzone per lei;T'immagini;Bolle di sapone;Dormi, dormi`,'Vasco Rossi'),
-D(`C'è chi dice no`,1987,`Vivere una favola;C'è chi dice no;Ridere di te;Blasco Rossi;Brava Giulia;Ciao;Non mi va;Lunedì`,'Vasco Rossi'),
-D(`Liberi liberi`,1989,`Domenica lunatica;Ormai è tardi;...Muoviti!;Vivere senza te;Tango... (della gelosia);Liberi...liberi;Dillo alla Luna;Stasera!`,'Vasco Rossi'),
-D(`Gli spari sopra`,1993,`Lo show;Non appari mai;Gli spari sopra (Celebrate);Vivere;Gabri;Ci credi;Delusa;...Stupendo;Vuoi star ferma!;L'uomo che hai di fronte;Occhi blu;Hai ragione tu;Walzer di gomma`,'Vasco Rossi'),
-D(`Nessun pericolo... per te`,1996,`Un gran bel film;Benvenuto;Gli angeli;Mi si escludeva;Sally;Praticamente perfetto;Le cose che non dici;Nessun pericolo... per te;Io perderò;Marea`,'Vasco Rossi'),
-D(`Canzoni per me`,1998,`E il mattino;L'una per te;Io no....;Quanti anni hai;Laura;La favola antica;Idea 77;Rewind`,'Vasco Rossi'),
-D(`Stupido hotel`,2001,`Siamo soli;Ti prendo e ti porto via;Standing ovation;Stupido hotel;Io ti accontento;Perché non piangi per me;Tu vuoi da me qualcosa;Stendimi;Quel vestito semplice;Canzone generale`,'Vasco Rossi'),
-D(`Buoni o cattivi`,2004,`Buoni o cattivi;Come stai;Anymore;Hai mai;Non basta niente;Dimenticarsi;Da sola con te;Cosa vuoi da me;E…;Señorita;Rock 'n' roll show;Un senso`,'Vasco Rossi'),
-D(`Il mondo che vorrei`,2008,`Il mondo che vorrei;Vieni qui;Gioca con me;E adesso che tocca a me;Dimmelo te;Cosa importa a me;Non vivo senza te;Qui si fa la storia;Colpa del whisky;Non sopporto;Ho bisogno di te;Basta poco`,'Vasco Rossi'),
-D(`Vivere o niente`,2011,`Vivere non è facile;Manifesto futurista della nuova umanità;Starò meglio di così;Prendi la strada;Dici che;Eh... già;Sei pazza di me;Vivere o niente;L'aquilone;Non sei quella che eri;Stammi vicino;Maledetta ragione`,'Vasco Rossi'),
-D(`Sono innocente`,2014,`Sono innocente ma...;Duro incontro;Come vorrei;Guai;Lo vedi;Aspettami;Dannate nuvole;Il blues della chitarra sola;Accidenti come sei bella;Quante volte;Cambia-menti;Rock Star`,'Vasco Rossi'),
-D(`Siamo qui`,2021,`XI comandamento;L'amore l'amore;Siamo qui;La pioggia alla domenica;Tu ce l'hai con me;Un respiro in più;Ho ritrovato te;Prendiamo il volo;Patto con riscatto;Una canzone d'amore buttata via`,'Vasco Rossi'),
-D(`Riflessi di me`,2012,`Sola;Arcobaleni;Quello che vorrei;Mai più;Se cadrai;Tutto quello che ho;Distratto;Il più bell'abbraccio;Riflessi di me;Honey Sun;Non mi dire;Un nuovo nome;Indelebile`,'Francesca Michielin'),
-D(`di20`,2015,`diVento;L'amore esiste;Almeno tu;Lontano;Amazing;Tutto questo vento;Battito di ciglia;Un cuore in due;Io e te;Sons and Daughters;25 febbraio`,'Francesca Michielin'),
-D(`2640`,2018,`Comunicare;Bolivia;Noleggiami ancora un film;Io non abito al mare;Tropicale;E se c'era....;Scusa se non ho gli occhi azzurri;Vulcano;Due galassie;La Serie B;Tapioca;Lava;Alonso`,'Francesca Michielin'),
-D(`Feat (stato di natura)`,2020,`Stato di natura;Monolocale;Sposerò un albero;Gange;Yo no tengo nada;Riserva naturale;Acqua e sapone;La vie ensemble;Star Trek;Cheyenne;Leoni`,'Francesca Michielin'),
-D(`Cani sciolti`,2023,`Occhi grandi grandi;Un bosco;Padova può ucciderti più di Milano;Ghetto perfetto;Quello che ancora non c'è;Piccola città;Bonsoir;Verbena;Carmen;Non sono io la tua solitudine;Claudia;d.punto;Disco dance`,'Francesca Michielin'),
-D(`Memories`,2015,`Intro;Memories;The Way You Do;Honey;I'm a Devil;Tutto quello che ho;Grazie a me;Talent Show;Monday (Skit);Ti amo ma;Merry Christmas;New Bitch;Carillon;Outro;Night Club (DNB)`,'Mr. Rain'),
-D(`Butterfly Effect`,2018,`Intro: The Winners;One Man Band;Superstite (feat. Osso);I grandi non piangono mai;Five Things (Skit);La storia di Sam;Ipernova;Fuori luogo;Rainbow Soda;Pianeti;Grazie a me (Acoustic);Carillon (Acoustic);Outro`,'Mr. Rain'),
-D(`Petrichor`,2021,`Intro;Fiori di Chernobyl;Nemico di me stesso;A forma di origami;Sentieri sulle guance;Meteoriti;Sindrome di Stoccolma;Elevator (Skit);Non fa per me;Non c'è più musica;9.3;Ricominciare da me (outro)`,'Mr. Rain'),
-D(`Fragile`,2022,`Crisalidi;Qui;Fragile;Neve su Marte;E invece no;Sincero;Atlantide;3.10 AM;Nero;Aria`,'Mr. Rain'),
-D(`Pianeta di Miller`,2024,`Due altalene;Paura del buio;La fine del mondo;Figli della notte;L'ultima volta;23 anni, 4 mesi, 8 giorni (skit);Supereroi;Un milione di notti;Immortali;Vite precedenti;Sempre un po' di te;Outro;Superhéroes`,'Mr. Rain'),
-D(`Night Visions`,2012,`Radioactive;Tiptoe;It's Time;Demons;On Top of the World;Amsterdam;Hear Me;Every Night;Bleeding Out;Underdog;Nothing Left to Say / Rocks`,'Imagine Dragons'),
-D(`Smoke + Mirrors`,2015,`Shots;Gold;Smoke and Mirrors;I'm So Sorry;I Bet My Life;Polaroid;Friction;It Comes Back to You;Dream;Trouble;Summer;Hopeless Opus;The Fall`,'Imagine Dragons'),
-D(`Evolve`,2017,`I Don't Know Why;Whatever It Takes;Believer;Walking the Wire;Rise Up;I'll Make It Up to You;Yesterday;Mouth of the River;Thunder;Start Over;Dancing in the Dark`,'Imagine Dragons'),
-D(`Origins`,2018,`Natural;Boomerang;Machine;Cool Out;Bad Liar;West Coast;Zero;Bullet in a Gun;Digital;Only;Stuck;Love`,'Imagine Dragons'),
-D(`Mercury – Act 1`,2021,`My Life;Lonely;Wrecked;Monday;#1;Easy Come Easy Go;Giants;It's Ok;Dull Knives;Follow You;Cutthroat;No Time for Toxic People;One Day`,'Imagine Dragons'),
-D(`Mercury – Act 2`,2022,`Bones;Symphony;Sharks;I Don't Like Myself;Blur;Higher Ground;Crushed;Take It Easy;Waves;I'm Happy;Ferris Wheel;Peace of Mind;Sirens;Tied;Younger;I Wish;Continual (feat. Cory Henry);They Don't Know You Like I Do`,'Imagine Dragons'),
-D(`Loom`,2024,`Wake Up;Nice to Meet You;Eyes Closed;Take Me to the Beach;In Your Corner;Gods Don't Pray;Don't Forget Me;Kid;Fire in These Hills`,'Imagine Dragons'),
-D(`A me piace così`,2010,`Ho toccato il cielo;Cullami;Con le nuvole;La lontananza;Petali;Dimmi che senso ha;Arida;Emozioniamoci ora;Purché tua;Dalle vene;Colori;On Line`,'Emma'),
-D(`Sarò libera`,2011,`Tra passione e lacrime;Sarò libera;Senza averti mai;Non sono solo te;Ti capita mai;Dove finisce la notte;Acqua e ghiaccio;Maledetto quel giorno;Cercavo amore;Da quando mi hai lasciato tu;Un attimo;Protagonista;Scusa se vado via`,'Emma'),
-D(`Schiena`,2013,`Amami;La mia felicità;Dimentico tutto;Ma che vita fai;Trattengo il fiato;1, 2, 3;In ogni angolo di me;L'amore non mi basta;Se rinasci;Chimera;Schiena`,'Emma'),
-D(`Adesso`,2015,`Adesso (ti voglio bene);Occhi profondi;Quando le canzoni finiranno;Facciamola più semplice;Finalmente;Arriverà l'amore;In viaggio;Io di te non ho paura;Per questo paese;Argento adesso;Il paradiso non esiste;Che sia tu;Poco prima di dormire`,'Emma'),
-D(`Essere qui`,2018,`L'isola;Le ragazze come me;Sottovoce;Mi parli piano;Effetto domino;Le cose che penso;Portami via da te;Luna e l'altra;Malelingue;Sorrido lo stesso;Coraggio`,'Emma'),
-D(`Souvenir`,2023,`Iniziamo dalla fine;Amore cane;Mezzo mondo;Intervallo;Sentimentale;Carne viva;Capelli corti;Indaco;Taxi sulla Luna`,'Emma'),
-D(`Nali`,2011,`Giorno per giorno;Fuori;Cado giù;Inverno;Diamante lei e luce lui;Questo bellissimo gioco;Solo;Brividi;Mi sei scoppiato dentro al cuore (Live)`,'Annalisa'),
-D(`Mentre tutto cambia`,2012,`Senza riserva;Non cambiare mai;Lucciole;Per una notte o per sempre;Tutto sommato;Bolle;Ottovolante;Ancora un'altra volta;Tra due minuti è primavera;Per te;Non ho che questo amore;Prato di orchidee`,'Annalisa'),
-D(`Non so ballare`,2013,`Scintille;Alice e il blu;A modo mio amo;Ed è ancora settembre;Spara amore mio;Io tu e noi;Tutta l'altra gente;Meraviglioso addio;Non so ballare;Tornerò ad amare;La prima volta`,'Annalisa'),
-D(`Splende`,2015,`Vincerò;Splende;Un bacio prima di morire;L'ultimo addio;Sento solo il presente;Questo amore;Una finestra tra le stelle;Niente tranne noi;Se potessi;Posizione fetale;Ti sento`,'Annalisa'),
-D(`Se avessi un cuore`,2016,`Se avessi un cuore;Leggerissima;Noi siamo un'isola;Coltiverò l'amore;Uno;Potrei abituarmi;A cuore spento;Inatteso;Le coincidenze;Quello che non sai di me;Il diluvio universale;Used to You`,'Annalisa'),
-D(`Bye Bye`,2018,`Bye Bye;Direzione la vita;Il mondo prima di te;Bianco nero e grigio;Le parole non mentono;Un domani;Illuminami;Ogni festa;Dimenticherai;Il prossimo weekend;Specchio;Superare;Dov'è che si va`,'Annalisa'),
-D(`Nuda`,2020,`Nuda;Romantica (feat. J-Ax);Tsunami;Houseparty;Cena di Natale;Bonsai;Piove col sole;Principessa (feat. Chadia Rodríguez);Graffiti;D'oro;A te cosa piace fare;Vento sulla Luna (feat. Rkomi);N.U.D.A. (nascere umani diventare animali) (feat. Achille Lauro)`,'Annalisa'),
-D(`E poi siamo finiti nel vortice`,2023,`Bellissima;Ragazza sola;Euforia;Mon Amour;Rosso corallo;Bollicine;Gommapiuma;Aria;La crisi a Saint-Tropez;Ti dico solo;Stelle;Indaco violento`,'Annalisa'),
-D(`Ma io sono fuoco`,2025,`Dipende;Piazza San Marco;Delusa;Esibizionista;Maschio;Avvelenata;Emanuela;Chiodi;Io sono;Amica;Una tigre sul letto continua a parlarmi`,'Annalisa'),
-D(`Gira, il mondo gira`,2023,`Una vita;L'anima balla;Ho un amico;Polvere;Menomale che c'è il mare;Un'altra volta;L'amore va;Tutto male;Bianca;Fammi morire;Canto alla luna;Tutto con te`,'Olly'),
-D(`Tutta vita`,2024,`È festa;I cantieri del Giappone;Per due come noi;Quei ricordi là;Noi che;Devastante;A noi non serve far l'amore;Sopra la stessa barca;La lavatrice si è rotta;Scarabocchi;A squarciagola;Il campione`,'Olly'),
-D(`Before Wanderlust`,2019,`Wanderlust!;Il giro del mondo;Disegno;Testa tra le nuvole, Pt. 0;Testa tra le nuvole, Pt. 1;Temporale (24 marzo);Dove sei?;Tempo al tempo;Cin cin`,'Alfa'),
-D(`Nord`,2021,`Nord;Snob;Testa tra le nuvole, Pt. 2;Non la ascoltare;Sul più bello (Out of My League);San Lorenzo;Bevo tutta la notte;Non ricordo il nome;Sold Out;Stupefacente`,'Alfa'),
-D(`Non so chi ha creato il mondo ma so che era innamorato`,2024,`Non so chi ha creato il mondo;Ma so che era innamorato;Nei tuoi occhi cosa c'è;Vai!;Vabbè ciao;Frida (Interlude);Il mio colore preferito;Sofia;Ma tu come stai;Metti a posto`,'Alfa'),
-D(`Diamo un calcio all'aldilà`,2015,`Castagne genge;Django;Il sonno ed il furto (Storia di un coinquilino);La strategia della tenzone;Sudowoodo;Rodger;Le Gentil;Me Want Marò Back`,'Pinguini Tattici Nucleari'),
-D(`Gioventù brucata`,2017,`Intro Montanelli;Sciare;Gioventù brucata;Ninna nanna per genitori disattenti;L'uomo che inventò il fuoco;Irene;Senti che cantare questi!;Pula;79;Gigi cinque ottavi;Tetris;Il concorso musicale`,'Pinguini Tattici Nucleari'),
-D(`Fuori dall'hype`,2019,`Fuori dall'hype;Antartide;Lake Washington Boulevard;Monopoli;Nonono;Scatole;Sashimi;La banalità del mare;Verdura;Freddie`,'Pinguini Tattici Nucleari'),
-D(`Ahia!`,2020,`Scooby Doo;Scrivile scemo;Bohémien;Pastello bianco;La storia infinita;Giulia;Ahia!`,'Pinguini Tattici Nucleari'),
-D(`Fake News`,2022,`Zen;L'ultima volta;Hold on;Stage Diving;Ricordi;Melting Pop;Forse;Fede;Dentista Croazia;Hikikomori;Giovani Wannabe;Barfly;Non sono cool;Cena di classe`,'Pinguini Tattici Nucleari'),
-D(`Hello World`,2024,`Hello World;Per non sentire la fine del mondo;Islanda;Burnout;Nevica;Your dog;Amaro;Alieni;Fuck you Vincenzo;Romantico ma muori;Piccola volpe;Nativi digitali;Bottiglie vuote;Migliore;Titoli di coda`,'Pinguini Tattici Nucleari'),
-D(`Voglia di vivere`,2023,`Ci pensiamo domani;Mani vuote;Voglia di vivere;Vita morte e miracoli;Eccetera;Nove maggio (Live)`,'Angelina Mango'),
-D(`Poké melodrama`,2024,`Gioielli di famiglia;Melodrama;La noia;Uguale a me (feat. Marco Mengoni);Crush;Smile;Diamoci una tregua (feat. Bresh);Edmund e Lucy;Cup of Tea;Una bella canzone;Fila indiana;Invece sì (feat. Dani Faiv);Che t'o dico a fa';Another World (feat. VillaBanks)`,'Angelina Mango'),
-D(`Caramé`,2025,`Caramé (intro);7up;Le scarpe slacciate;Pacco fragile;Ioeio (feat. Madame);La vita va presa a morsi;Come un bambino;Mylove;Nina canta (intermezzo);Velo sugli occhi;Ci siamo persi la fine;Tutto all'aria;Bomba a mano;Aiaiai;Igloo;Cosicosicosicosì`,'Angelina Mango')
-];
+const DISC=[];
 const norm=s=>' '+s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' ';
 const KEYS=[];
 DISC.forEach((al,ai)=>al.tr.forEach((tr,ti)=>{const f=norm(tr[0]),s=norm(tr[0].replace(/\(.*?\)/g,''));KEYS.push([f,ai,ti]);if(s!==f&&s.trim())KEYS.push([s,ai,ti])}));
@@ -484,7 +407,7 @@ function sync(){
       const ar=known||tagAr||pre;
       if(ar){
         const title=(r.tt||'').trim()||(sp.length>1?sp.slice(1).join(' - ').trim():'')||raw;
-        const ai=dynAlbum(ar,(r.tal||'').trim()||'Altri brani');
+        const ai=dynAlbum(ar,(r.tal||'').trim()||'Brani');
         t.ai=ai;t.name=title;t.tn=r.tn||999;DISC[ai].tr.push([title,'',t]);
       }
     }
