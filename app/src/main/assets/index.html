@@ -360,8 +360,8 @@ function render(){
   const orows=f=>oth.filter(x=>!f||f(x[0].name)).map((x,n)=>row(n+1,x[0].name,fmt(x[0].dur),x[1]));
   const ids=a=>DISC.map((_,ai)=>ai).filter(ai=>DISC[ai].ar===a);
   const akey=a=>a==='Ultimo'?'ar':'ar-'+a;
-  const acard=(ai,wa)=>card(dal(DISC[ai]),(wa===1?dn(DISC[ai].ar)+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+cnt(ai),()=>{view={l:2,ai};clr()},akA(ai));
-  const arcard=a=>{const x=ids(a);return card(dn(a),x.filter(vis).length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),()=>{view={l:1,ar:a};clr()},akey(a))};
+  const acard=(ai,wa)=>lpc(card(dal(DISC[ai]),(wa===1?dn(DISC[ai].ar)+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+cnt(ai),()=>{view={l:2,ai};clr()},akA(ai)),()=>editAl(ai));
+  const arcard=a=>{const x=ids(a);return lpc(card(dn(a),x.filter(vis).length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),()=>{view={l:1,ar:a};clr()},akey(a)),()=>editAr(a))};
   const msg=s=>{const p=document.createElement('p');p.className='keys';p.textContent=s;l.appendChild(p)};
   let crumb='Artisti';
   if(q){
@@ -385,7 +385,7 @@ function render(){
   }else{
     crumb='Altri file';const o=orows();if(o.length)sect(l,'Altri file','',o.length,o);else{view={l:0};return render()}
   }
-  $('crumb').textContent=crumb;$('back').hidden=!!q||view.l===0;$('edit').hidden=!!q||(view.l!==1&&view.l!==2&&view.l!==5);
+  $('crumb').textContent=crumb;$('back').hidden=!!q||view.l===0;$('edit').hidden=true;
   $('empty').hidden=T.length>0;
   $('count').textContent=hv+'/'+tot+' brani';
   ['prev','next','play'].forEach(b=>$(b).disabled=!T.length);
@@ -633,6 +633,10 @@ $('edit').onclick=()=>{
     ['Cambia nome',()=>sheet('Nuovo nome',[['Salva',v=>{if(!v)return;if(v===(isAl?d.t:ar))delete REN[rk];else REN[rk]=v;try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}if(isAl&&d.dyn)view={l:1,ar:ar};sync.done=0;sync()}],['Annulla']],'Nome',cur)],
     ['Annulla']]);
 };
+function lpc(b,fn){lp(b,fn);return b}
+function renS(rk,orig,cur,after){sheet('Nuovo nome',[['Salva',v=>{if(!v)return;if(v===orig)delete REN[rk];else REN[rk]=v;try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}if(after)after();sync.done=0;sync()}],['Annulla']],'Nome',cur)}
+function editAr(ar){sheet(dn(ar),[['Cambia foto',()=>{pk=agk(ar);$('imgf').click()}],['Cambia nome',()=>renS('ar|'+ar,ar,dn(ar))],['Annulla']])}
+function editAl(ai){const d=DISC[ai];if(!d)return;sheet(dal(d),[['Cambia foto',()=>{pk=akA(ai);$('imgf').click()}],['Cambia nome',()=>renS('al|'+d.ar+'|'+d.t,d.t,dal(d),()=>{if(d.dyn&&view.l===2)view={l:1,ar:d.ar}})],['Annulla']])}
 </script>
 
 </html>
