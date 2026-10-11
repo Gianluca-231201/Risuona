@@ -44,6 +44,7 @@ class PlaybackService : MediaLibraryService() {
             .build()
         val pi = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         session = MediaLibrarySession.Builder(this, player, Cb()).setSessionActivity(pi).build()
+        hnd.postDelayed(saver, 5000)
         player.addListener(object : Player.Listener {
             override fun onEvents(p: Player, events: Player.Events) {
                 if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION, Player.EVENT_TIMELINE_CHANGED, Player.EVENT_IS_PLAYING_CHANGED)) saveState()
@@ -54,16 +55,32 @@ class PlaybackService : MediaLibraryService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession = session
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        saveState()
         if (!player.playWhenReady || player.mediaItemCount == 0) stopSelf()
     }
 
     override fun onDestroy() {
+        hnd.removeCallbacks(saver)
+        try {
+            saveState()
+        } catch (e: Exception) {
+        }
         session.release()
         player.release()
         super.onDestroy()
     }
 
     private var lastAuto = 0L
+    private val hnd = Handler(Looper.getMainLooper())
+    private val saver = object : Runnable {
+        override fun run() {
+            try {
+                if (player.isPlaying) saveState()
+            } catch (e: Exception) {
+            }
+            hnd.postDelayed(this, 5000)
+        }
+    }
 
     private fun saveState() {
         val n = player.mediaItemCount
