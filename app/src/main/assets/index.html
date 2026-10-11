@@ -410,7 +410,7 @@ function render(){
   const ids=a=>DISC.map((_,ai)=>ai).filter(ai=>DISC[ai].ar===a);
   const akey=a=>a==='Ultimo'?'ar':'ar-'+a;
   const acard=(ai,wa)=>lpc(card(dal(DISC[ai]),(wa===1?dn(DISC[ai].ar)+' · ':'')+(DISC[ai].y?DISC[ai].y+' · ':'')+have(ai)+'/'+cnt(ai),()=>{view={l:2,ai};clr()},akA(ai)),()=>editAl(ai));
-  const arcard=a=>{const x=ids(a);return lpc(card(dn(a),x.filter(vis).length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),()=>{view={l:1,ar:a};clr()},akey(a)),()=>editAr(a))};
+  const arcard=a=>{const x=ids(a);return lpc(card(dn(a),x.filter(vis).length+' album · '+x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),()=>{view=a==='Ultimo'?{l:1,ar:a}:{l:6,ar:a};clr()},akey(a)),()=>editAr(a))};
   const msg=s=>{const p=document.createElement('p');p.className='keys';p.textContent=s;l.appendChild(p)};
   let crumb='Artisti';
   if(q){
@@ -427,6 +427,9 @@ function render(){
   }else if(view.l===2){
     const d=DISC[view.ai],r=trows(view.ai);crumb=dn(d.ar);
     if(r.length)sect(l,dal(d),d.y,have(view.ai)+'/'+cnt(view.ai),r);else msg('Nessun brano caricato per questo album.');
+  }else if(view.l===6){
+    crumb=dn(view.ar);const r=[],x=ids(view.ar);x.forEach(ai=>trows(ai).forEach(li=>r.push(li)));r.forEach((li,k)=>{li.children[0].textContent=k+1});
+    if(r.length)sect(l,dn(view.ar),'',x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),r);else msg('Nessun brano per questo artista.');
   }else if(view.l===4){
     crumb='Libreria';libView(l);
   }else if(view.l===5){
@@ -575,7 +578,7 @@ function sync(){
     meta.push({id:t.id,title:t.name,artist:dn(d.ar),album:dal(d),no:t.ti+1});
     if(!IMG[ck]&&!tried[ck]){tried[ck]=1;arts.push([ck,t.id])}
   });
-  if((view.l===2&&!DISC[view.ai])||(view.l===1&&!ARTS.includes(view.ar)))view={l:0};
+  if((view.l===2&&!DISC[view.ai])||((view.l===1||view.l===6)&&!ARTS.includes(view.ar)))view={l:0};
   i=T.findIndex(t=>t.id===cur);
   Android.setMeta(JSON.stringify(meta));
   show(T[i]);render();
@@ -679,7 +682,7 @@ function plView(l){
   if(rows.length)sect(l,p.name,'',rows.length,rows);else pmsg(l,'Playlist vuota. Aggiungi brani con il tasto accanto al titolo.');
   return p.name;
 }
-$('back').onclick=()=>{view=view.l===2?{l:1,ar:DISC[view.ai].ar}:view.l===5?{l:4}:{l:0};render()};
+$('back').onclick=()=>{view=view.l===2?(DISC[view.ai].ar==='Ultimo'?{l:1,ar:'Ultimo'}:{l:6,ar:DISC[view.ai].ar}):view.l===5?{l:4}:{l:0};render()};
 $('edit').onclick=()=>{
   if(view.l===5){const p=PL.find(x=>x.id===view.pid);if(p)plMenu(p);return}
   const isAl=view.l===2,d=isAl?DISC[view.ai]:null,ar=isAl?d.ar:view.ar,rk=isAl?'al|'+d.ar+'|'+d.t:'ar|'+ar,cur=isAl?dal(d):dn(ar),ik=isAl?akA(view.ai):agk(ar);
