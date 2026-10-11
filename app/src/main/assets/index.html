@@ -300,7 +300,17 @@ D(`Materia (Terra)`,2021,`Cambia un uomo;Una canzone triste;Il meno possibile (f
 D(`Materia (Pelle)`,2022,`No Stress;In città;Attraverso te (feat. LRDL);Tutti i miei ricordi;Chiedimi come sto (feat. Bresh);Migliore di me;Unatoka Wapi;Neruda;Parlami sopra;Appunto 3. 16-03-2022;Respira;Appunto 4. 27-06-2022;Ancora una volta (con Samuele Bersani)`,'Marco Mengoni'),
 D(`Materia (Prisma)`,2023,`Due vite;Fiori d'orgoglio;Pazza musica;Incenso;Un'altra storia;Appunto 5: Non sono questo;In tempo;The Damned of the Earth;Lasciami indietro;Due nuvole`,'Marco Mengoni'),
 D(`Più popolari`,'',`Stitches;Treat You Better;There's Nothing Holdin' Me Back;Mercy;Señorita (con Camila Cabello);In My Blood;If I Can't Have You;Lost in Japan;Life of the Party;Something Big;I Know What You Did Last Summer (con Camila Cabello);Never Be Alone;Youth (feat. Khalid);Wonder;Monster (con Justin Bieber);Summer of Love;When You're Gone;It'll Be Okay;Why Why Why;Heart of Gold`,'Shawn Mendes'),
-D(`Più popolari`,'',`Everytime;Why Don't You Love Me?;Me Minus You;OK;What Happened Last Night;Crazy;Frida (mai, mai, mai);Come le onde (feat. J-Ax);Pensare male (con Elodie);Los Angeles (feat. Guè);Non è vero;Cabriolet Panorama;Mal di gola;Leoni al sole;Blackout;Italodisco;Un ragazzo una ragazza;Karma;Tu con chi fai l'amore;Pronto come va`,'The Kolors')
+D(`Più popolari`,'',`Everytime;Why Don't You Love Me?;Me Minus You;OK;What Happened Last Night;Crazy;Frida (mai, mai, mai);Come le onde (feat. J-Ax);Pensare male (con Elodie);Los Angeles (feat. Guè);Non è vero;Cabriolet Panorama;Mal di gola;Leoni al sole;Blackout;Italodisco;Un ragazzo una ragazza;Karma;Tu con chi fai l'amore;Pronto come va`,'The Kolors'),
+D(`Singoli`,'',`Wake Up;Sto bene così;Stella cadente;Non litighiamo più;Oh ma`,'Rocco Hunt'),
+D(`Singoli`,'',`Senza parole;Se ti potessi dire;La verità;Un mondo migliore;Come nelle favole;Ad ogni costo;L'uomo più semplice;Gli sbagli che fai`,'Vasco Rossi'),
+D(`Singoli`,'',`Nessun grado di separazione;Chiamami per nome;Magnifico;Cigno nero`,'Francesca Michielin'),
+D(`Singoli`,'',`Enemy;Warriors;Birds;Next to Me;Children of the Sky`,'Imagine Dragons'),
+D(`Singoli`,'',`Calore;Non è l'inferno;Io sono bella;Stupida allegria;Latina;Ogni volta è così;Apnea`,'Emma'),
+D(`Singoli`,'',`Sinceramente;Storie brevi;Dieci;Movimento lento;Tropicana;Disco Paradise`,'Annalisa'),
+D(`Singoli`,'',`Balorda nostalgia;Depresso fortunato`,'Olly'),
+D(`Singoli`,'',`Bellissimissima;Il filo rosso;A me mi piace`,'Alfa'),
+D(`Singoli`,'',`Ringo Starr;Ridere;Rubami la notte;Coca Zero`,'Pinguini Tattici Nucleari'),
+D(`Singoli`,'',`Mandare tutto all'aria;Sai che`,'Marco Mengoni')
 ];
 const norm=s=>' '+s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()+' ';
 const KEYS=[];
@@ -723,7 +733,7 @@ function popSet(){
 function isStar(ai,ti){
   const d=DISC[ai];if(!d||!d.tr[ti])return false;
   const u=STAR[hk(ai,ti)];if(u!=null)return !!u;
-  if(d.t==='Più popolari')return true;if(d.dyn)return false;
+  if(d.t==='Più popolari'||d.t==='Singoli')return true;if(d.dyn)return false;
   const t=d.tr[ti][0],s=popSet();
   return !!(s[norm(d.ar)+norm(t)]||s[norm(d.ar)+norm(t.replace(/\(.*?\)/g,''))]);
 }
