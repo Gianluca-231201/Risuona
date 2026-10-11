@@ -147,6 +147,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .mix{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:14px;padding:14px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:500 16px var(--display)}
 .mix svg{width:20px;height:20px;fill:currentColor}
 .st{color:#ffc83d;margin-left:6px;font-size:13px}
+.sheet{max-height:82vh;overflow-y:auto}
 </style>
 <div class="wrap">
   <header>
@@ -194,6 +195,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 <script>
 var PL=[];try{PL=JSON.parse(localStorage.getItem('rs_pl')||'[]')||[]}catch(e){}
 var VZ=[],VC=[];
+var MOVE={};try{MOVE=JSON.parse(localStorage.getItem('rs_move')||'{}')||{}}catch(e){}
 var STAR={};try{STAR=JSON.parse(localStorage.getItem('rs_star')||'{}')||{}}catch(e){}
 var REN={};try{REN=JSON.parse(localStorage.getItem('rs_ren')||'{}')||{}}catch(e){}
 function dn(a){return REN['ar|'+a]||a}
@@ -556,11 +558,13 @@ function sync(){
     const t={id:r.id,name:raw,dur:r.dur?r.dur/1000:NaN,ai:null,ti:null};
     const sp=raw.split(/\s+-\s+/),pre=sp.length>1&&!/^\d+$/.test(sp[0].trim())?sp[0].trim():'';
     const tagAr=(r.ta||'').trim(),known=isCat(tagAr)||isCat(raw),foreign=!known&&(tagAr||pre);
-    let m=foreign?null:match(raw);
+    const mv=MOVE[r.id],ttl0=(r.tt||'').trim()||(sp.length>1?sp.slice(1).join(' - ').trim():'')||raw;
+    let m=mv?match(mv+' - '+ttl0):(foreign?null:match(raw));
+    if(mv&&m&&DISC[m[1]].ar!==mv)m=null;
     if(m&&T.some(x=>x.ai===m[1]&&x.ti===m[2]))m=null;
     if(m){t.ai=m[1];t.ti=m[2];t.name=DISC[m[1]].tr[m[2]][0]}
     else{
-      const ar=known||tagAr||pre;
+      const ar=mv||known||tagAr||pre;
       if(ar){
         const title=(r.tt||'').trim()||(sp.length>1?sp.slice(1).join(' - ').trim():'')||raw;
         const si=DISC.findIndex((d,x)=>x<NST&&d.ar===ar&&(d.t==='Singoli'||d.t==='Singoli ed extra'));
@@ -640,7 +644,7 @@ function plMenu(p){sheet(p.name,[
 function trackMenu(k){
   const t=T[k];if(!t)return;const it=[],p=view.l===5&&!q?PL.find(x=>x.id===view.pid):null;
   if(p)it.push(['Rimuovi dalla playlist',()=>{p.ids=p.ids.filter(x=>x!==t.id);saveP();render()}]);
-  it.push(['Aggiungi a playlist',()=>addTo(t)]);if(t.ai!=null)it.push(starItem(t.ai,t.ti));
+  it.push(['Aggiungi a playlist',()=>addTo(t)]);it.push(['Sposta in un altro artista',()=>moveTo(t)]);if(t.ai!=null)it.push(starItem(t.ai,t.ti));
   it.push(['Elimina brano',()=>confirmS('Eliminare "'+t.name+'" dall\'app?','Elimina',()=>{const x=T.findIndex(z=>z.id===t.id);if(x>=0)del(x)}),1]);
   it.push(['Annulla']);sheet(t.name,it);
 }
@@ -719,7 +723,7 @@ function doBackup(){
   toast('Preparo il backup…');
   Promise.all(Object.keys(IMG).map(k=>fetch(IMG[k]).then(r=>r.blob()).then(toJpg).then(b=>[k,b]).catch(()=>null))).then(a=>{
     const img={};a.forEach(x=>{if(x)img[x[0]]=x[1]});
-    Android.backup(JSON.stringify({pl:PL,ren:REN,hid:HID,star:STAR,img:img}));
+    Android.backup(JSON.stringify({pl:PL,ren:REN,hid:HID,star:STAR,move:MOVE,img:img}));
   });
 }
 window.onRestore=function(web){
@@ -729,6 +733,7 @@ window.onRestore=function(web){
     Object.keys(w.ren||{}).forEach(k=>{if(!(k in REN))REN[k]=w.ren[k]});try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}
     Object.keys(w.hid||{}).forEach(k=>{HID[k]=1});saveH();
     Object.keys(w.star||{}).forEach(k=>{if(!(k in STAR))STAR[k]=w.star[k]});saveS();
+    Object.keys(w.move||{}).forEach(k=>{if(!(k in MOVE))MOVE[k]=w.move[k]});saveM();
     Object.keys(w.img||{}).forEach(k=>{if(!IMG[k]){tried[k]=1;try{_si(k,b64blob(w.img[k]))}catch(e){}}});
     sync.done=0;sync();toast('Backup ripristinato');
   }catch(e){toast('File di backup non valido')}
@@ -799,6 +804,14 @@ function delAlbum(ai){
     ids.forEach(id=>{PL.forEach(p=>{p.ids=p.ids.filter(x=>x!==id)});Android.remove(id)});saveP();
     view={l:0};sync();toast('Album eliminato');
   });
+}
+function saveM(){try{localStorage.setItem('rs_move',JSON.stringify(MOVE))}catch(e){}}
+function moveTo(t){
+  const go=a=>{MOVE[t.id]=a;saveM();sync();toast('Spostato in '+dn(a))};
+  const it=ARTS.slice().sort((a,b)=>dn(a).localeCompare(dn(b))).map(a=>[dn(a),()=>go(a)]);
+  it.unshift(['+ Nuovo artista',()=>sheet('Nuovo artista',[['Sposta',v=>{if(v)go(v)}],['Annulla']],'Nome dell\'artista')]);
+  if(MOVE[t.id])it.unshift(['Riporta all\'artista originale',()=>{delete MOVE[t.id];saveM();sync()}]);
+  it.push(['Annulla']);sheet('Sposta "'+t.name+'" in…',it);
 }
 </script>
 
