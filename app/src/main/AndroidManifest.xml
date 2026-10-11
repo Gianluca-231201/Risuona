@@ -22,6 +22,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <provider
+            android:name=".ArtProvider"
+            android:authorities="app.risuona.art"
+            android:exported="true" />
         <service
             android:name=".PlaybackService"
             android:exported="true"

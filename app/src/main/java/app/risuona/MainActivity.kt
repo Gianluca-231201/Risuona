@@ -106,7 +106,7 @@ class MainActivity : Activity() {
         val c = ctl ?: return
         val d = c.duration
         val o = JSONObject()
-            .put("id", c.currentMediaItem?.mediaId ?: "")
+            .put("id", (c.currentMediaItem?.mediaId ?: "").substringAfterLast('|'))
             .put("playing", c.isPlaying)
             .put("pos", c.currentPosition)
             .put("dur", if (d == C.TIME_UNSET) 0L else d)
@@ -182,6 +182,14 @@ class MainActivity : Activity() {
                     startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("audio/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true), 2)
                 } catch (e: Exception) {
                 }
+            }
+        }
+
+        @JavascriptInterface
+        fun setPlaylists(json: String) {
+            try {
+                File(filesDir, "pl.json").writeText(json)
+            } catch (e: Exception) {
             }
         }
 

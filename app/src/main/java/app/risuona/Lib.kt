@@ -63,12 +63,37 @@ object Lib {
     @Synchronized
     fun snapshot(c: Context): List<Tr> = ArrayList(all(c))
 
-    fun folder(id: String, title: String, type: Int = MediaMetadata.MEDIA_TYPE_FOLDER_MIXED): MediaItem =
-        MediaItem.Builder().setMediaId(id).setMediaMetadata(
-            MediaMetadata.Builder().setTitle(title).setIsBrowsable(true).setIsPlayable(false).setMediaType(type).build()
-        ).build()
+    class Pl(val id: String, val name: String, val ids: List<String>)
 
-    fun item(c: Context, t: Tr): MediaItem {
+    fun playlists(c: Context): List<Pl> {
+        val l = ArrayList<Pl>()
+        try {
+            val f = File(c.filesDir, "pl.json")
+            if (f.exists()) {
+                val a = JSONArray(f.readText())
+                for (i in 0 until a.length()) {
+                    val o = a.getJSONObject(i)
+                    val ids = ArrayList<String>()
+                    val ja = o.getJSONArray("ids")
+                    for (k in 0 until ja.length()) ids.add(ja.getString(k))
+                    l.add(Pl(o.getString("id"), o.optString("name"), ids))
+                }
+            }
+        } catch (e: Exception) {
+        }
+        return l
+    }
+
+    fun artUri(artist: String, album: String): Uri =
+        Uri.parse("content://app.risuona.art/a").buildUpon().appendQueryParameter("a", artist).appendQueryParameter("b", album).build()
+
+    fun folder(id: String, title: String, type: Int = MediaMetadata.MEDIA_TYPE_FOLDER_MIXED, art: Uri? = null): MediaItem {
+        val md = MediaMetadata.Builder().setTitle(title).setIsBrowsable(true).setIsPlayable(false).setMediaType(type)
+        if (art != null) md.setArtworkUri(art)
+        return MediaItem.Builder().setMediaId(id).setMediaMetadata(md.build()).build()
+    }
+
+    fun item(c: Context, t: Tr, mid: String = t.id): MediaItem {
         val md = MediaMetadata.Builder()
             .setTitle(t.title.ifEmpty { t.name })
             .setArtist(t.artist.ifEmpty { null })
@@ -77,24 +102,32 @@ object Lib {
             .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
         if (t.album.isNotEmpty()) {
             val af = artFile(c, t.artist, t.album)
-            if (af.exists()) md.setArtworkUri(Uri.fromFile(af))
+            if (af.exists()) md.setArtworkUri(artUri(t.artist, t.album))
         }
-        return MediaItem.Builder().setMediaId(t.id).setUri(Uri.fromFile(File(dir(c), t.file))).setMediaMetadata(md.build()).build()
+        return MediaItem.Builder().setMediaId(mid).setUri(Uri.fromFile(File(dir(c), t.file))).setMediaMetadata(md.build()).build()
     }
 
-    fun track(c: Context, id: String): MediaItem? = snapshot(c).find { it.id == id }?.let { item(c, it) }
+    fun track(c: Context, id: String): MediaItem? {
+        val real = id.substringAfterLast('|')
+        return snapshot(c).find { it.id == real }?.let { item(c, it, id) }
+    }
 
     private fun sorted(l: List<Tr>): List<Tr> = l.sortedWith(compareBy({ it.artist.ifEmpty { "~" } }, { it.album }, { it.no }, { it.name }))
 
     fun children(c: Context, parent: String): List<MediaItem> {
         val l = snapshot(c)
         return when {
-            parent == "root" -> listOf(folder("artists", "Artisti", MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS), folder("all", "Brani"))
-            parent == "artists" -> l.map { it.artist }.filter { it.isNotEmpty() }.distinct().sorted().map { folder("ar|$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_ALBUMS) }
+            parent == "root" -> listOf(folder("artists", "Artisti", MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS), folder("playlists", "Playlist", MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS), folder("all", "Brani"))
+            parent == "playlists" -> playlists(c).map { folder("pl|" + it.id, it.name, MediaMetadata.MEDIA_TYPE_PLAYLIST, artUri("playlist", it.name)) }
+            parent.startsWith("pl|") -> {
+                val pl = playlists(c).find { it.id == parent.substring(3) }
+                pl?.ids?.mapNotNull { id -> l.find { it.id == id } }?.map { item(c, it, "p|" + pl.id + "|" + it.id) } ?: emptyList()
+            }
+            parent == "artists" -> l.map { it.artist }.filter { it.isNotEmpty() }.distinct().sorted().map { folder("ar|$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_ALBUMS, artUri(it, "")) }
             parent == "all" -> sorted(l).map { item(c, it) }
             parent.startsWith("ar|") -> {
                 val ar = parent.substring(3)
-                l.filter { it.artist == ar }.map { it.album }.distinct().sorted().map { folder("al|$ar|$it", it) }
+                l.filter { it.artist == ar }.map { it.album }.distinct().sorted().map { folder("al|$ar|$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_MIXED, artUri(ar, it)) }
             }
             parent.startsWith("al|") -> {
                 val p = parent.substring(3)
@@ -106,6 +139,12 @@ object Lib {
 
     fun queueFor(c: Context, id: String): Pair<List<MediaItem>, Int>? {
         val l = snapshot(c)
+        if (id.startsWith("p|")) {
+            val parts = id.split('|')
+            val pl = playlists(c).find { it.id == parts.getOrNull(1) } ?: return null
+            val q = pl.ids.mapNotNull { x -> l.find { it.id == x } }
+            return Pair(q.map { item(c, it, "p|" + pl.id + "|" + it.id) }, q.indexOfFirst { it.id == parts.last() }.coerceAtLeast(0))
+        }
         val t = l.find { it.id == id } ?: return null
         val q = if (t.album.isNotEmpty()) l.filter { it.artist == t.artist && it.album == t.album }.sortedBy { it.no } else sorted(l)
         return Pair(q.map { item(c, it) }, q.indexOfFirst { it.id == id }.coerceAtLeast(0))

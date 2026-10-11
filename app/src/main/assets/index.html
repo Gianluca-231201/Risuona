@@ -481,7 +481,8 @@ function step(){}
 function b64blob(b){return new Blob([Uint8Array.from(atob(b),c=>c.charCodeAt(0))])}
 function toJpg(blob){return createImageBitmap(blob).then(im=>{const s=Math.min(1,512/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85).split(',')[1]})}
 var _si=setImg;
-setImg=function(k,blob){_si(k,blob);const d=DISC[KD[k]!=null?KD[k]:k.indexOf('al-')===0?+k.slice(3):-1];if(d){toJpg(blob).then(b=>Android.setArt(d.ar,d.t,b)).catch(()=>{})}};
+function artT(k){if(k==='ar')return['Ultimo',''];if(k.indexOf('ar-')===0)return[k.slice(3),''];const d=DISC[KD[k]!=null?KD[k]:k.indexOf('al-')===0?+k.slice(3):-1];return d?[d.ar,d.t]:null}
+setImg=function(k,blob){_si(k,blob);const a=artT(k);if(a)toJpg(blob).then(b=>Android.setArt(a[0],a[1],b)).catch(()=>{})};
 function show(t){const al=t&&t.ai!=null?DISC[t.ai]:null;$('title').textContent=t?t.name:'Nessun brano';$('sub').textContent=!t?'Carica i tuoi file audio':al?al.ar+' · '+al.t+(al.y?' · '+al.y:''):'File locale'}
 var NST=DISC.length,NAR=ARTS.length,KD={};
 function akA(ai){const d=DISC[ai];return d&&d.dyn?'ald-'+d.ar+'|'+d.t:'al-'+ai}
@@ -520,6 +521,7 @@ function sync(){
   i=T.findIndex(t=>t.id===cur);
   Android.setMeta(JSON.stringify(meta));
   show(T[i]);render();
+  if(!sync.done){sync.done=1;try{Android.setPlaylists(JSON.stringify(PL))}catch(e){}Object.keys(IMG).forEach(k=>{const a=artT(k);if(a)fetch(IMG[k]).then(r=>r.blob()).then(toJpg).then(b=>Android.setArt(a[0],a[1],b)).catch(()=>{})})}
   arts.forEach(a=>{try{const b=Android.art(a[1]);if(b)setImg(a[0],b64blob(b))}catch(e){}});
 }
 function load(k,play){i=k;show(T[k]);render();if(play)Android.play(JSON.stringify(T.map(x=>x.id)),k)}
@@ -542,7 +544,7 @@ $('seek').oninput=()=>{seeking=true};
 $('seek').onchange=()=>{if(nat.dur)Android.seek(nat.dur*$('seek').value/1000);seeking=false};
 setTimeout(()=>{if(!synced){synced=1;sync()}},1500);
 /* ---- menu a pressione lunga, playlist ---- */
-function saveP(){try{localStorage.setItem('rs_pl',JSON.stringify(PL))}catch(e){}}
+function saveP(){try{localStorage.setItem('rs_pl',JSON.stringify(PL))}catch(e){}try{Android.setPlaylists(JSON.stringify(PL))}catch(e){}}
 function closeSheet(){const e=$('sheetbg');if(e)e.remove()}
 function sheet(title,items,input,val){
   closeSheet();

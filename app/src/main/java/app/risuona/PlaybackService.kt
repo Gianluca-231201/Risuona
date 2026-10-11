@@ -2,6 +2,7 @@ package app.risuona
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -45,7 +46,11 @@ class PlaybackService : MediaLibraryService() {
 
     private inner class Cb : MediaLibrarySession.Callback {
         override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> =
-            Futures.immediateFuture(LibraryResult.ofItem(Lib.folder("root", "Risuona"), params))
+            Futures.immediateFuture(LibraryResult.ofItem(Lib.folder("root", "Risuona"), LibraryParams.Builder().setExtras(Bundle().apply {
+                putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED", true)
+                putInt("android.media.browse.CONTENT_STYLE_BROWSABLE_HINT", 2)
+                putInt("android.media.browse.CONTENT_STYLE_PLAYABLE_HINT", 1)
+            }).build()))
 
         override fun onGetChildren(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String, page: Int, pageSize: Int, params: LibraryParams?): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
             Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(Lib.children(this@PlaybackService, parentId)), params))
