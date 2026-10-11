@@ -117,7 +117,7 @@ object Lib {
     fun children(c: Context, parent: String): List<MediaItem> {
         val l = snapshot(c)
         return when {
-            parent == "root" -> listOf(folder("artists", "Artisti", MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS), folder("playlists", "Playlist", MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS), folder("all", "Brani"))
+            parent == "root" -> listOf(folder("playlists", "Playlist", MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS), folder("artists", "Artisti", MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS), folder("all", "Brani"))
             parent == "playlists" -> playlists(c).map { folder("pl|" + it.id, it.name, MediaMetadata.MEDIA_TYPE_PLAYLIST, artUri("playlist", it.name)) }
             parent.startsWith("pl|") -> {
                 val pl = playlists(c).find { it.id == parent.substring(3) }
