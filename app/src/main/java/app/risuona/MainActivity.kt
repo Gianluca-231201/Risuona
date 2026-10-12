@@ -339,6 +339,7 @@ class MainActivity : Activity() {
                     t.artist = o.optString("artist")
                     t.album = o.optString("album")
                     t.no = o.optInt("no")
+                    t.st = o.optInt("st") == 1
                 }
                 Lib.save(this@MainActivity)
             } catch (e: Exception) {

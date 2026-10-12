@@ -579,7 +579,7 @@ function sync(){
   T.forEach(t=>{
     if(t.ai==null){meta.push({id:t.id,title:t.name,artist:'',album:'',no:0});return}
     const d=DISC[t.ai],ck=akA(t.ai);KD[ck]=t.ai;
-    meta.push({id:t.id,title:t.name,artist:dn(d.ar),album:dal(d),no:t.ti+1});
+    meta.push({id:t.id,title:t.name,artist:dn(d.ar),album:dal(d),no:t.ti+1,st:isStar(t.ai,t.ti)?1:0});
     if(!IMG[ck]&&!tried[ck]){tried[ck]=1;arts.push([ck,t.id])}
   });
   if((view.l===2&&!DISC[view.ai])||((view.l===1||view.l===6)&&!ARTS.includes(view.ar)))view={l:0};

@@ -99,20 +99,20 @@ class PlaybackService : MediaLibraryService() {
 
     private fun resume(): MediaSession.MediaItemsWithStartPosition? {
         val sp = getSharedPreferences("st", MODE_PRIVATE)
-        var l = (sp.getString("ids", "") ?: "").split('\n').filter { it.isNotEmpty() }.mapNotNull { Lib.track(this, it) }
-        var idx = sp.getInt("idx", 0)
-        var pos = sp.getLong("pos", 0L)
-        if (l.isEmpty()) {
-            l = Lib.children(this, "all")
-            idx = 0
-            pos = 0L
-        }
-        if (l.isEmpty()) return null
-        if (idx !in l.indices) {
-            idx = 0
-            pos = 0L
-        }
-        return MediaSession.MediaItemsWithStartPosition(l, idx, pos)
+        val ids = (sp.getString("ids", "") ?: "").split('\n').filter { it.isNotEmpty() }
+        val lastId = ids.getOrNull(sp.getInt("idx", 0))?.substringAfterLast('|')
+        val all = Lib.snapshot(this)
+        if (all.isEmpty()) return null
+        val stars = all.filter { it.st }
+        val pool = (if (stars.isNotEmpty()) stars else all).toMutableList()
+        val last = all.find { it.id == lastId }
+        if (last != null && pool.none { it.id == last.id }) pool.add(0, last)
+        val start = pool.indexOfFirst { it.id == lastId }
+        return MediaSession.MediaItemsWithStartPosition(
+            pool.map { Lib.item(this, it) },
+            if (start >= 0) start else (Math.random() * pool.size).toInt(),
+            if (start >= 0) sp.getLong("pos", 0L) else 0L
+        )
     }
 
     private fun autoStart() {
@@ -129,6 +129,7 @@ class PlaybackService : MediaLibraryService() {
                             player.prepare()
                         }
                     }
+                    player.shuffleModeEnabled = true
                     if (player.mediaItemCount > 0) player.play()
                 }
             } catch (e: Exception) {
@@ -143,6 +144,7 @@ class PlaybackService : MediaLibraryService() {
 
         override fun onPlaybackResumption(mediaSession: MediaSession, controller: MediaSession.ControllerInfo): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
             val r = resume()
+            player.shuffleModeEnabled = true
             return if (r != null) Futures.immediateFuture(r) else Futures.immediateFailedFuture(UnsupportedOperationException())
         }
 
