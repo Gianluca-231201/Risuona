@@ -16,6 +16,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.TeeAudioProcessor
@@ -47,6 +48,7 @@ class PlaybackService : MediaLibraryService() {
         hnd.postDelayed(saver, 5000)
         player.addListener(object : Player.Listener {
             override fun onEvents(p: Player, events: Player.Events) {
+                if (events.containsAny(Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED, Player.EVENT_TIMELINE_CHANGED)) applyShuffle()
                 if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION, Player.EVENT_TIMELINE_CHANGED, Player.EVENT_IS_PLAYING_CHANGED)) saveState()
             }
         })
@@ -71,6 +73,47 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private var lastAuto = 0L
+    private var shufSig = ""
+
+    private fun artistOf(k: Int): String =
+        player.getMediaItemAt(k).mediaMetadata.artist?.toString()?.trim()?.lowercase()?.ifEmpty { null } ?: "#$k"
+
+    private fun applyShuffle() {
+        if (!player.shuffleModeEnabled) {
+            shufSig = ""
+            return
+        }
+        val n = player.mediaItemCount
+        if (n < 3) return
+        val sb = StringBuilder()
+        for (k in 0 until n) sb.append(player.getMediaItemAt(k).mediaId).append('\n')
+        val sig = sb.toString()
+        if (sig == shufSig) return
+        shufSig = sig
+        val cur = player.currentMediaItemIndex.coerceIn(0, n - 1)
+        val groups = HashMap<String, MutableList<Int>>()
+        for (k in 0 until n) if (k != cur) groups.getOrPut(artistOf(k)) { ArrayList() }.add(k)
+        groups.values.forEach { it.shuffle() }
+        val order = IntArray(n)
+        order[0] = cur
+        var last = artistOf(cur)
+        for (p in 1 until n) {
+            val rem = n - p
+            val cands = groups.entries.filter { it.value.isNotEmpty() && it.key != last }
+            val pick = if (cands.isEmpty()) groups.entries.first { it.value.isNotEmpty() }
+            else {
+                val big = cands.maxByOrNull { it.value.size }!!
+                if (big.value.size * 2 >= rem) big
+                else {
+                    var r = (Math.random() * cands.sumOf { it.value.size }).toInt()
+                    cands.first { r -= it.value.size; r < 0 }
+                }
+            }
+            order[p] = pick.value.removeAt(pick.value.size - 1)
+            last = pick.key
+        }
+        player.setShuffleOrder(DefaultShuffleOrder(order, System.nanoTime()))
+    }
     private val hnd = Handler(Looper.getMainLooper())
     private val saver = object : Runnable {
         override fun run() {
