@@ -20,7 +20,10 @@ import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.TeeAudioProcessor
+import androidx.media3.session.CommandButton
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import com.google.common.collect.ImmutableList
@@ -48,6 +51,7 @@ class PlaybackService : MediaLibraryService() {
         hnd.postDelayed(saver, 5000)
         player.addListener(object : Player.Listener {
             override fun onEvents(p: Player, events: Player.Events) {
+                if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION)) refreshFav()
                 if (events.containsAny(Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED, Player.EVENT_TIMELINE_CHANGED)) applyShuffle()
                 if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION, Player.EVENT_TIMELINE_CHANGED, Player.EVENT_IS_PLAYING_CHANGED)) saveState()
             }
@@ -74,6 +78,23 @@ class PlaybackService : MediaLibraryService() {
 
     private var lastAuto = 0L
     private var shufSig = ""
+    private val favCmd = SessionCommand("RISUONA_FAV", Bundle.EMPTY)
+
+    private fun curId(): String = (player.currentMediaItem?.mediaId ?: "").substringAfterLast('|')
+
+    fun refreshFav() {
+        try {
+            val on = curId().isNotEmpty() && Lib.isFav(this, curId())
+            session.setCustomLayout(ImmutableList.of(
+                CommandButton.Builder()
+                    .setDisplayName(if (on) "Togli dai preferiti" else "Aggiungi ai preferiti")
+                    .setIconResId(if (on) R.drawable.ic_heart_on else R.drawable.ic_heart)
+                    .setSessionCommand(favCmd)
+                    .build()
+            ))
+        } catch (e: Exception) {
+        }
+    }
 
     private fun artistOf(k: Int): String =
         player.getMediaItemAt(k).mediaMetadata.artist?.toString()?.trim()?.lowercase()?.ifEmpty { null } ?: "#$k"
@@ -181,7 +202,23 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private inner class Cb : MediaLibrarySession.Callback {
+        override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
+            val cmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().add(favCmd).build()
+            return MediaSession.ConnectionResult.accept(cmds, MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS)
+        }
+
+        override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo, customCommand: SessionCommand, args: Bundle): ListenableFuture<SessionResult> {
+            if (customCommand.customAction == favCmd.customAction) {
+                val id = curId()
+                if (id.isNotEmpty()) Lib.toggleFav(this@PlaybackService, id)
+                refreshFav()
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+            return super.onCustomCommand(session, controller, customCommand, args)
+        }
+
         override fun onPostConnect(session: MediaSession, controller: MediaSession.ControllerInfo) {
+            refreshFav()
             if (session.isAutoCompanionController(controller) || session.isAutomotiveController(controller)) autoStart()
         }
 

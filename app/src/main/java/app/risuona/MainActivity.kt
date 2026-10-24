@@ -317,6 +317,23 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
+        fun favs(): String = JSONArray(Lib.favs(this@MainActivity)).toString()
+
+        @JavascriptInterface
+        fun toggleFav(id: String): Boolean = Lib.toggleFav(this@MainActivity, id)
+
+        @JavascriptInterface
+        fun setFavs(json: String) {
+            try {
+                val a = JSONArray(json)
+                val l = Lib.favs(this@MainActivity)
+                for (k in 0 until a.length()) l.add(a.getString(k))
+                Lib.setFavs(this@MainActivity, l)
+            } catch (e: Exception) {
+            }
+        }
+
+        @JavascriptInterface
         fun setPlaylists(json: String) {
             try {
                 File(filesDir, "pl.json").writeText(json)

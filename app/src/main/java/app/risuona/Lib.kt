@@ -85,6 +85,23 @@ object Lib {
 
     class Pl(val id: String, val name: String, val ids: List<String>)
 
+    fun favs(c: Context): MutableList<String> =
+        (c.getSharedPreferences("fav", Context.MODE_PRIVATE).getString("ids", "") ?: "").split('\n').filter { it.isNotEmpty() }.toMutableList()
+
+    fun setFavs(c: Context, l: List<String>) {
+        c.getSharedPreferences("fav", Context.MODE_PRIVATE).edit().putString("ids", l.distinct().joinToString("\n")).apply()
+    }
+
+    fun isFav(c: Context, id: String): Boolean = favs(c).contains(id)
+
+    fun toggleFav(c: Context, id: String): Boolean {
+        val l = favs(c)
+        val on = !l.remove(id)
+        if (on) l.add(id)
+        setFavs(c, l)
+        return on
+    }
+
     fun playlists(c: Context): List<Pl> {
         val l = ArrayList<Pl>()
         try {
@@ -137,7 +154,8 @@ object Lib {
     fun children(c: Context, parent: String): List<MediaItem> {
         val l = snapshot(c)
         return when {
-            parent == "root" -> listOf(folder("artists", "Home", MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS), folder("playlists", "Playlist", MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS), folder("all", "Brani"))
+            parent == "root" -> listOf(folder("artists", "Home", MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS), folder("fav", "Preferiti", MediaMetadata.MEDIA_TYPE_PLAYLIST, artUri("playlist", "Preferiti")), folder("playlists", "Playlist", MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS), folder("all", "Brani"))
+            parent == "fav" -> favs(c).mapNotNull { id -> l.find { it.id == id } }.map { item(c, it, "f|" + it.id) }
             parent == "playlists" -> playlists(c).map { folder("pl|" + it.id, it.name, MediaMetadata.MEDIA_TYPE_PLAYLIST, artUri("playlist", it.name)) }
             parent.startsWith("pl|") -> {
                 val pl = playlists(c).find { it.id == parent.substring(3) }
@@ -162,6 +180,10 @@ object Lib {
 
     fun queueFor(c: Context, id: String): Pair<List<MediaItem>, Int>? {
         val l = snapshot(c)
+        if (id.startsWith("f|")) {
+            val q = favs(c).mapNotNull { x -> l.find { it.id == x } }
+            return Pair(q.map { item(c, it, "f|" + it.id) }, q.indexOfFirst { it.id == id.substring(2) }.coerceAtLeast(0))
+        }
         if (id.startsWith("p|")) {
             val parts = id.split('|')
             val pl = playlists(c).find { it.id == parts.getOrNull(1) } ?: return null

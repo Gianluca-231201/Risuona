@@ -432,6 +432,9 @@ function render(){
   }else if(view.l===6){
     crumb=dn(view.ar);const r=[],x=ids(view.ar);x.forEach(ai=>trows(ai).forEach(li=>r.push(li)));r.forEach((li,k)=>{li.children[0].textContent=k+1});
     if(r.length)sect(l,dn(view.ar),'',x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),r);else msg('Nessun brano per questo artista.');
+  }else if(view.l===7){
+    crumb='Preferiti';const rows=[];favIds().forEach(id=>{const k=T.findIndex(t=>t.id===id);if(k>=0)rows.push(row(rows.length+1,T[k].name,fmt(T[k].dur),k))});
+    if(rows.length)sect(l,'Preferiti ♥','',rows.length,rows);else msg('Nessun preferito. Tieni premuto su un brano o tocca il cuore in Android Auto.');
   }else if(view.l===4){
     crumb='Libreria';libView(l);
   }else if(view.l===5){
@@ -644,7 +647,7 @@ function plMenu(p){sheet(p.name,[
 function trackMenu(k){
   const t=T[k];if(!t)return;const it=[],p=view.l===5&&!q?PL.find(x=>x.id===view.pid):null;
   if(p)it.push(['Rimuovi dalla playlist',()=>{p.ids=p.ids.filter(x=>x!==t.id);saveP();render()}]);
-  it.push(['Aggiungi a playlist',()=>addTo(t)]);it.push(['Sposta in un altro artista',()=>moveTo(t)]);if(t.ai!=null)it.push(starItem(t.ai,t.ti));
+  it.push(['Aggiungi a playlist',()=>addTo(t)]);{const on=favIds().includes(t.id);it.push([on?'Togli dai preferiti ♥':'Aggiungi ai preferiti ♥',()=>{Android.toggleFav(t.id);render()}])}it.push(['Sposta in un altro artista',()=>moveTo(t)]);if(t.ai!=null)it.push(starItem(t.ai,t.ti));
   it.push(['Elimina brano',()=>confirmS('Eliminare "'+t.name+'" dall\'app?','Elimina',()=>{const x=T.findIndex(z=>z.id===t.id);if(x>=0)del(x)}),1]);
   it.push(['Annulla']);sheet(t.name,it);
 }
@@ -659,7 +662,7 @@ function row(n,name,d,k){
   const b=document.createElement('button');b.className='pl';b.title='Aggiungi a playlist';b.setAttribute('aria-label','Aggiungi a playlist');
   b.innerHTML='<svg viewBox="0 0 24 24"><path d="M3 6h12v2H3zm0 5h12v2H3zm0 5h8v2H3zm15-5V8h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>';
   b.onclick=e=>{e.stopPropagation();addTo(T[k])};li.replaceChild(b,li.lastChild);
-  li.onclick=()=>{if(view.l===5&&!q)playPl(k);else load(k,true)};
+  li.onclick=()=>{if(view.l===5&&!q)playPl(k);else if(view.l===7&&!q){const ids=favIds().filter(id=>T.some(t=>t.id===id));i=k;show(T[k]);render();Android.play(JSON.stringify(ids),Math.max(0,ids.indexOf(T[k].id)))}else load(k,true)};
   lp(li,()=>trackMenu(k));
   return li;
 }
@@ -671,6 +674,7 @@ function mrow(ai,ti,li,k){
 function del(k){const id=T[k].id;PL.forEach(p=>{p.ids=p.ids.filter(x=>x!==id)});saveP();Android.remove(id);sync()}
 function libView(l){
   const c=PL.map(p=>{const b=card(p.name,p.ids.filter(id=>T.some(t=>t.id===id)).length+' brani',()=>{view={l:5,pid:p.id};clr()},'pl-'+p.id);lp(b,()=>plMenu(p));return b});
+  c.unshift(card('Preferiti ♥',favIds().filter(id=>T.some(t=>t.id===id)).length+' brani',()=>{view={l:7};clr()}));
   c.push(card('Nuova playlist','Crea',()=>newPl()));
   const h=document.createElement('h3');h.className='plh';h.textContent='Playlist';l.appendChild(h);grid(l,c);
   if(T.length)sect(l,'Brani caricati','',T.length,T.map((t,k)=>row(k+1,t.name,fmt(t.dur),k)));
@@ -686,7 +690,7 @@ function plView(l){
   if(rows.length)sect(l,p.name,'',rows.length,rows);else pmsg(l,'Playlist vuota. Aggiungi brani con il tasto accanto al titolo.');
   return p.name;
 }
-$('back').onclick=()=>{view=view.l===2?(DISC[view.ai].ar==='Ultimo'?{l:1,ar:'Ultimo'}:{l:6,ar:DISC[view.ai].ar}):view.l===5?{l:4}:{l:0};render()};
+$('back').onclick=()=>{view=view.l===2?(DISC[view.ai].ar==='Ultimo'?{l:1,ar:'Ultimo'}:{l:6,ar:DISC[view.ai].ar}):(view.l===5||view.l===7)?{l:4}:{l:0};render()};
 $('edit').onclick=()=>{
   if(view.l===5){const p=PL.find(x=>x.id===view.pid);if(p)plMenu(p);return}
   const isAl=view.l===2,d=isAl?DISC[view.ai]:null,ar=isAl?d.ar:view.ar,rk=isAl?'al|'+d.ar+'|'+d.t:'ar|'+ar,cur=isAl?dal(d):dn(ar),ik=isAl?akA(view.ai):agk(ar);
@@ -723,12 +727,13 @@ function doBackup(){
   toast('Preparo il backup…');
   Promise.all(Object.keys(IMG).map(k=>fetch(IMG[k]).then(r=>r.blob()).then(toJpg).then(b=>[k,b]).catch(()=>null))).then(a=>{
     const img={};a.forEach(x=>{if(x)img[x[0]]=x[1]});
-    Android.backup(JSON.stringify({pl:PL,ren:REN,hid:HID,star:STAR,move:MOVE,img:img}));
+    Android.backup(JSON.stringify({fav:favIds(),pl:PL,ren:REN,hid:HID,star:STAR,move:MOVE,img:img}));
   });
 }
 window.onRestore=function(web){
   try{
     const w=JSON.parse(web||'{}');
+    try{Android.setFavs(JSON.stringify(w.fav||[]))}catch(e){}
     (w.pl||[]).forEach(p=>{if(p&&p.id&&!PL.some(x=>x.id===p.id))PL.push(p)});saveP();
     Object.keys(w.ren||{}).forEach(k=>{if(!(k in REN))REN[k]=w.ren[k]});try{localStorage.setItem('rs_ren',JSON.stringify(REN))}catch(e){}
     Object.keys(w.hid||{}).forEach(k=>{HID[k]=1});saveH();
@@ -813,6 +818,8 @@ function moveTo(t){
   if(MOVE[t.id])it.unshift(['Riporta all\'artista originale',()=>{delete MOVE[t.id];saveM();sync()}]);
   it.push(['Annulla']);sheet('Sposta "'+t.name+'" in…',it);
 }
+function favIds(){try{return JSON.parse(Android.favs())}catch(e){return[]}}
+window.addEventListener('focus',()=>{try{render()}catch(e){}});
 </script>
 
 </html>
