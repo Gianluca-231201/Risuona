@@ -148,6 +148,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .mix svg{width:20px;height:20px;fill:currentColor}
 .st{color:#ffc83d;margin-left:6px;font-size:13px}
 .sheet{max-height:82vh;overflow-y:auto}
+#fav[aria-pressed="true"]{color:#ff4d6d;background:none}
 </style>
 <div class="wrap">
   <header>
@@ -176,6 +177,7 @@ li,.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
     </div>
     <div class="ctl">
       <div class="grp">
+        <button class="ib" id="fav" aria-pressed="false" title="Preferiti" aria-label="Preferiti"><svg viewBox="0 0 24 24"><path id="favp" d=""/></svg></button>
         <button class="ib" id="shuf" aria-pressed="false" title="Casuale"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.3 3.1-1.3-1.7L13.4 6H17V3zM3 6h4.6l8 12H17v-3l4 4-4 4v-3h-2.6l-8-12H3V6zm0 12h3.4l2.2-3.3 1.2 1.8L7.6 20H3v-2z"/></svg></button>
         <button class="ib" id="prev" title="Precedente"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
         <button class="ib play" id="play" title="Riproduci"><svg viewBox="0 0 24 24"><path id="pi" d="M7 4v16l13-8z"/></svg></button>
@@ -818,8 +820,13 @@ function moveTo(t){
   if(MOVE[t.id])it.unshift(['Riporta all\'artista originale',()=>{delete MOVE[t.id];saveM();sync()}]);
   it.push(['Annulla']);sheet('Sposta "'+t.name+'" in…',it);
 }
+const HE='M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z',HF='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
+function favUi(){const id=(window.nat&&nat.id)||(T[i]?T[i].id:''),on=!!id&&favIds().includes(id);$('fav').setAttribute('aria-pressed',on);$('favp').setAttribute('d',on?HF:HE);$('fav').disabled=!id}
+$('fav').onclick=()=>{const id=(window.nat&&nat.id)||(T[i]?T[i].id:'');if(!id)return;const on=Android.toggleFav(id);favUi();toast(on?'Aggiunto ai preferiti':'Tolto dai preferiti');if(view.l===4||view.l===7)render()};
+var _on=window.onNative;window.onNative=function(s){const ch=!window.nat||nat.id!==s.id;_on(s);if(ch)favUi()};
 function favIds(){try{return JSON.parse(Android.favs())}catch(e){return[]}}
-window.addEventListener('focus',()=>{try{render()}catch(e){}});
+window.addEventListener('focus',()=>{try{render();favUi()}catch(e){}});
+setTimeout(()=>{try{favUi()}catch(e){}},1600);
 </script>
 
 </html>
