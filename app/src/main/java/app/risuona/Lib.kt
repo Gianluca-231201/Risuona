@@ -137,9 +137,9 @@ object Lib {
             .setAlbumTitle(t.album.ifEmpty { null })
             .setIsBrowsable(false).setIsPlayable(true)
             .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-        if (t.album.isNotEmpty()) {
-            val af = artFile(c, t.artist, t.album)
-            if (af.exists()) md.setArtworkUri(artUri(t.artist, t.album))
+        if (t.artist.isNotEmpty()) {
+            if (t.album.isNotEmpty() && artFile(c, t.artist, t.album).exists()) md.setArtworkUri(artUri(t.artist, t.album))
+            else if (artFile(c, t.artist, "").exists()) md.setArtworkUri(artUri(t.artist, ""))
         }
         return MediaItem.Builder().setMediaId(mid).setUri(Uri.fromFile(File(dir(c), t.file))).setMediaMetadata(md.build()).build()
     }
