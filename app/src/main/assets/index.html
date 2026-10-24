@@ -834,9 +834,9 @@ $('fav').onclick=()=>{const id=(window.nat&&nat.id)||(T[i]?T[i].id:'');if(!id)re
 var _on=window.onNative;window.onNative=function(s){const ch=!window.nat||nat.id!==s.id;_on(s);if(ch)favUi()};
 function topRow(l){
   let P={};try{P=JSON.parse(Android.plays())}catch(e){}
-  const top=T.map((t,k)=>[k,P[t.id]||0]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,15).map(x=>x[0]);
+  const F=favIds();const top=T.map((t,k)=>[k,P[t.id]||0]).filter(x=>F.includes(T[x[0]].id)).sort((a,b)=>b[1]-a[1]).slice(0,15).map(x=>x[0]);
   if(!top.length)return;
-  const h=document.createElement('h3');h.className='plh2';h.textContent='Più ascoltati';l.appendChild(h);
+  const h=document.createElement('h3');h.className='plh2';h.textContent='Preferiti più ascoltati';l.appendChild(h);
   const row=document.createElement('div');row.className='tiles';
   const ids=top.map(k=>T[k].id);
   top.forEach((k,n)=>{
