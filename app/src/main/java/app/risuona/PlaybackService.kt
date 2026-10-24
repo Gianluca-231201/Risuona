@@ -51,6 +51,13 @@ class PlaybackService : MediaLibraryService() {
         hnd.postDelayed(saver, 5000)
         player.addListener(object : Player.Listener {
             override fun onEvents(p: Player, events: Player.Events) {
+                if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION, Player.EVENT_IS_PLAYING_CHANGED)) {
+                    val id = curId()
+                    if (p.isPlaying && id.isNotEmpty() && id != lastCounted) {
+                        lastCounted = id
+                        Lib.incPlay(this@PlaybackService, id)
+                    }
+                }
                 if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION)) refreshFav()
                 if (events.containsAny(Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED, Player.EVENT_TIMELINE_CHANGED)) applyShuffle()
                 if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION, Player.EVENT_TIMELINE_CHANGED, Player.EVENT_IS_PLAYING_CHANGED)) saveState()
@@ -78,6 +85,7 @@ class PlaybackService : MediaLibraryService() {
 
     private var lastAuto = 0L
     private var shufSig = ""
+    private var lastCounted = ""
     private val favCmd = SessionCommand("RISUONA_FAV", Bundle.EMPTY)
 
     private fun curId(): String = (player.currentMediaItem?.mediaId ?: "").substringAfterLast('|')

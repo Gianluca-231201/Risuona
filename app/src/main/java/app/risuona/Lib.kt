@@ -92,6 +92,18 @@ object Lib {
         c.getSharedPreferences("fav", Context.MODE_PRIVATE).edit().putString("ids", l.distinct().joinToString("\n")).apply()
     }
 
+    fun plays(c: Context): String = c.getSharedPreferences("plays", Context.MODE_PRIVATE).getString("j", "{}") ?: "{}"
+
+    @Synchronized
+    fun incPlay(c: Context, id: String) {
+        try {
+            val o = JSONObject(plays(c))
+            o.put(id, o.optInt(id) + 1)
+            c.getSharedPreferences("plays", Context.MODE_PRIVATE).edit().putString("j", o.toString()).apply()
+        } catch (e: Exception) {
+        }
+    }
+
     fun isFav(c: Context, id: String): Boolean = favs(c).contains(id)
 
     fun toggleFav(c: Context, id: String): Boolean {

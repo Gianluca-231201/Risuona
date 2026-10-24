@@ -317,6 +317,9 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
+        fun plays(): String = Lib.plays(this@MainActivity)
+
+        @JavascriptInterface
         fun favs(): String = JSONArray(Lib.favs(this@MainActivity)).toString()
 
         @JavascriptInterface
