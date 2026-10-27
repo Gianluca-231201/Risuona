@@ -2,6 +2,7 @@ package app.risuona
 
 import android.app.PendingIntent
 import android.content.Context
+import android.graphics.Bitmap
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -12,6 +13,10 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.util.BitmapLoader
+import androidx.media3.datasource.DataSourceBitmapLoader
+import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -47,7 +52,9 @@ class PlaybackService : MediaLibraryService() {
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
         val pi = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        session = MediaLibrarySession.Builder(this, player, Cb()).setSessionActivity(pi).build()
+        session = MediaLibrarySession.Builder(this, player, Cb()).setSessionActivity(pi)
+            .setBitmapLoader(PreferUri(CacheBitmapLoader(DataSourceBitmapLoader(this))))
+            .build()
         hnd.postDelayed(saver, 5000)
         player.addListener(object : Player.Listener {
             override fun onEvents(p: Player, events: Player.Events) {
@@ -262,5 +269,15 @@ class PlaybackService : MediaLibraryService() {
             val l = mediaItems.mapNotNull { Lib.track(this@PlaybackService, it.mediaId) }
             return Futures.immediateFuture(MediaSession.MediaItemsWithStartPosition(l, if (startIndex in l.indices) startIndex else 0, startPositionMs))
         }
+    }
+}
+
+@OptIn(UnstableApi::class)
+class PreferUri(private val d: BitmapLoader) : BitmapLoader by d {
+    override fun loadBitmapFromMetadata(metadata: MediaMetadata): ListenableFuture<Bitmap>? {
+        val u = metadata.artworkUri
+        if (u != null) return d.loadBitmap(u)
+        val b = metadata.artworkData
+        return if (b != null) d.decodeBitmap(b) else null
     }
 }
