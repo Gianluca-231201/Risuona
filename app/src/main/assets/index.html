@@ -444,7 +444,7 @@ function render(){
     if(r.length)sect(l,dn(view.ar),'',x.reduce((s,ai)=>s+have(ai),0)+'/'+x.reduce((s,ai)=>s+cnt(ai),0),r);else msg('Nessun brano per questo artista.');
   }else if(view.l===7){
     crumb='Preferiti';const rows=[];favIds().forEach(id=>{const k=T.findIndex(t=>t.id===id);if(k>=0)rows.push(row(rows.length+1,T[k].name,fmt(T[k].dur),k))});
-    if(rows.length)sect(l,'Preferiti ♥','',rows.length,rows);else msg('Nessun preferito. Tieni premuto su un brano o tocca il cuore in Android Auto.');
+    if(rows.length)favMix(l);if(rows.length)sect(l,'Preferiti ♥','',rows.length,rows);else msg('Nessun preferito. Tieni premuto su un brano o tocca il cuore in Android Auto.');
   }else if(view.l===4){
     crumb='Libreria';libView(l);
   }else if(view.l===5){
@@ -672,7 +672,7 @@ function row(n,name,d,k){
   const b=document.createElement('button');b.className='pl';b.title='Aggiungi a playlist';b.setAttribute('aria-label','Aggiungi a playlist');
   b.innerHTML='<svg viewBox="0 0 24 24"><path d="M3 6h12v2H3zm0 5h12v2H3zm0 5h8v2H3zm15-5V8h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>';
   b.onclick=e=>{e.stopPropagation();addTo(T[k])};li.replaceChild(b,li.lastChild);
-  li.onclick=()=>{if(view.l===5&&!q)playPl(k);else if(view.l===7&&!q){const ids=favIds().filter(id=>T.some(t=>t.id===id));i=k;show(T[k]);render();Android.play(JSON.stringify(ids),Math.max(0,ids.indexOf(T[k].id)))}else load(k,true)};
+  li.onclick=()=>{if(view.l===5&&!q)playPl(k);else if(view.l===7&&!q)playFav(k);else load(k,true)};
   lp(li,()=>trackMenu(k));
   return li;
 }
@@ -851,6 +851,14 @@ function topRow(l){
   });
   l.appendChild(row);
 }
+function playFav(k){
+  const F=favIds().filter(id=>T.some(t=>t.id===id));if(!F.length)return;
+  if(k==null)k=T.findIndex(t=>t.id===F[Math.floor(Math.random()*F.length)]);
+  const ids=F.map(id=>'f|'+id).concat(T.filter(t=>!F.includes(t.id)).map(t=>t.id));
+  shuf=true;$('shuf').setAttribute('aria-pressed',true);Android.shuffle(true);
+  i=k;show(T[k]);render();Android.play(JSON.stringify(ids),Math.max(0,ids.indexOf('f|'+T[k].id)));
+}
+function favMix(l){const b=document.createElement('button');b.className='mix';b.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-2.3 3.1-1.3-1.7L13.4 6H17V3zM3 6h4.6l8 12H17v-3l4 4-4 4v-3h-2.6l-8-12H3V6zm0 12h3.4l2.2-3.3 1.2 1.8L7.6 20H3v-2z"/></svg><span>Riproduzione casuale ♥</span>';b.onclick=()=>playFav();l.appendChild(b)}
 function favIds(){try{return JSON.parse(Android.favs())}catch(e){return[]}}
 window.addEventListener('focus',()=>{try{render();favUi()}catch(e){}});
 setTimeout(()=>{try{favUi()}catch(e){}},1600);

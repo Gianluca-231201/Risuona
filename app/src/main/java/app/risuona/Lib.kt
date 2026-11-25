@@ -100,8 +100,19 @@ object Lib {
             val o = JSONObject(plays(c))
             o.put(id, o.optInt(id) + 1)
             c.getSharedPreferences("plays", Context.MODE_PRIVATE).edit().putString("j", o.toString()).apply()
+            val t = today(c)
+            t.add(id)
+            c.getSharedPreferences("today", Context.MODE_PRIVATE).edit().putString("d", dayKey()).putStringSet("ids", t).apply()
         } catch (e: Exception) {
         }
+    }
+
+    private fun dayKey(): String = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+
+    fun today(c: Context): MutableSet<String> {
+        val sp = c.getSharedPreferences("today", Context.MODE_PRIVATE)
+        if (sp.getString("d", "") != dayKey()) return HashSet()
+        return HashSet(sp.getStringSet("ids", emptySet()) ?: emptySet())
     }
 
     fun isFav(c: Context, id: String): Boolean = favs(c).contains(id)
@@ -193,8 +204,10 @@ object Lib {
     fun queueFor(c: Context, id: String): Pair<List<MediaItem>, Int>? {
         val l = snapshot(c)
         if (id.startsWith("f|")) {
-            val q = favs(c).mapNotNull { x -> l.find { it.id == x } }
-            return Pair(q.map { item(c, it, "f|" + it.id) }, q.indexOfFirst { it.id == id.substring(2) }.coerceAtLeast(0))
+            val fv = favs(c)
+            val q = fv.mapNotNull { x -> l.find { it.id == x } }
+            val rest = l.filter { !fv.contains(it.id) }
+            return Pair(q.map { item(c, it, "f|" + it.id) } + rest.map { item(c, it) }, q.indexOfFirst { it.id == id.substring(2) }.coerceAtLeast(0))
         }
         if (id.startsWith("p|")) {
             val parts = id.split('|')

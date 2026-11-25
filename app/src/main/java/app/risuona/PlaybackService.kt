@@ -127,26 +127,41 @@ class PlaybackService : MediaLibraryService() {
         if (sig == shufSig) return
         shufSig = sig
         val cur = player.currentMediaItemIndex.coerceIn(0, n - 1)
-        val groups = HashMap<String, MutableList<Int>>()
-        for (k in 0 until n) if (k != cur) groups.getOrPut(artistOf(k)) { ArrayList() }.add(k)
-        groups.values.forEach { it.shuffle() }
+        val played = Lib.today(this)
+        var favMode = false
+        for (k in 0 until n) if (player.getMediaItemAt(k).mediaId.startsWith("f|")) favMode = true
+        val tiers = Array(3) { ArrayList<Int>() }
+        for (k in 0 until n) {
+            if (k == cur) continue
+            val mid = player.getMediaItemAt(k).mediaId
+            val heard = played.contains(mid.substringAfterLast('|'))
+            val t = if (favMode) (if (heard) 2 else if (mid.startsWith("f|")) 0 else 1) else (if (heard) 1 else 0)
+            tiers[t].add(k)
+        }
         val order = IntArray(n)
         order[0] = cur
+        var p = 1
         var last = artistOf(cur)
-        for (p in 1 until n) {
-            val rem = n - p
-            val cands = groups.entries.filter { it.value.isNotEmpty() && it.key != last }
-            val pick = if (cands.isEmpty()) groups.entries.first { it.value.isNotEmpty() }
-            else {
-                val big = cands.maxByOrNull { it.value.size }!!
-                if (big.value.size * 2 >= rem) big
+        for (tier in tiers) {
+            val groups = HashMap<String, MutableList<Int>>()
+            for (k in tier) groups.getOrPut(artistOf(k)) { ArrayList() }.add(k)
+            groups.values.forEach { it.shuffle() }
+            var rem = tier.size
+            while (rem > 0) {
+                val cands = groups.entries.filter { it.value.isNotEmpty() && it.key != last }
+                val pick = if (cands.isEmpty()) groups.entries.first { it.value.isNotEmpty() }
                 else {
-                    var r = (Math.random() * cands.sumOf { it.value.size }).toInt()
-                    cands.first { r -= it.value.size; r < 0 }
+                    val big = cands.maxByOrNull { it.value.size }!!
+                    if (big.value.size * 2 >= rem) big
+                    else {
+                        var r = (Math.random() * cands.sumOf { it.value.size }).toInt()
+                        cands.first { r -= it.value.size; r < 0 }
+                    }
                 }
+                order[p++] = pick.value.removeAt(pick.value.size - 1)
+                last = pick.key
+                rem--
             }
-            order[p] = pick.value.removeAt(pick.value.size - 1)
-            last = pick.key
         }
         player.setShuffleOrder(DefaultShuffleOrder(order, System.nanoTime()))
     }
@@ -262,6 +277,7 @@ class PlaybackService : MediaLibraryService() {
             Futures.immediateFuture(mediaItems.mapNotNull { Lib.track(this@PlaybackService, it.mediaId) }.toMutableList())
 
         override fun onSetMediaItems(mediaSession: MediaSession, controller: MediaSession.ControllerInfo, mediaItems: MutableList<MediaItem>, startIndex: Int, startPositionMs: Long): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            if (mediaItems.any { it.mediaId.startsWith("f|") }) player.shuffleModeEnabled = true
             if (mediaItems.size == 1) {
                 val q = Lib.queueFor(this@PlaybackService, mediaItems[0].mediaId)
                 if (q != null) return Futures.immediateFuture(MediaSession.MediaItemsWithStartPosition(q.first, q.second, C.TIME_UNSET))
